@@ -18,7 +18,7 @@ router = APIRouter(tags=["documents"])
 @router.post("/documents", response_model=StubResponse)
 async def upload_documents(
     user: Annotated[SessionUser, Depends(get_current_user)],
-    files: list[UploadFile] = File(...),
+    files: Annotated[list[UploadFile], File(...)],
 ) -> StubResponse:
     """Validate type/size, store in S3, register as Processing, enqueue ingest."""
     return StubResponse(endpoint="POST /documents")

@@ -15,9 +15,15 @@ from app import models  # noqa: F401 -- imported so the tables register before c
 from app.database import Base, engine
 from app.routers import answer, auth, conversations, documents, messages, users
 
+_DESCRIPTION = (
+    "Build a simple enterprise RAG chatbot.\n"
+    "The application must read approved Confluence pages, Jira issues, and "
+    "uploaded PDF/DOCX/TXT/Markdown documents"
+)
+
 app = FastAPI(
     title="Simple enterprise RAG chatbot",
-    description="Build a simple enterprise RAG chatbot.\nThe application must read approved Confluence pages, Jira issues, and uploaded PDF/DOCX/TXT/Markdown documents",
+    description=_DESCRIPTION,
     version="0.1.0",
 )
 
