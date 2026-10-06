@@ -6,6 +6,8 @@ auth, same request shape -- so the frontend and future Teams/Slack callers
 compile against something that already resolves.
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Response
 
 from app.auth import SessionUser, get_current_user
@@ -17,7 +19,7 @@ router = APIRouter(tags=["answer"])
 @router.post("/answer", response_model=StubResponse)
 async def answer(
     body: AnswerRequest,
-    user: SessionUser = Depends(get_current_user),
+    user: Annotated[SessionUser, Depends(get_current_user)],
 ) -> StubResponse:
     """Accept a question (+ optional conversation_id), stream a grounded answer.
 
@@ -31,7 +33,7 @@ async def answer(
 @router.post("/answer/stop", status_code=204)
 async def stop_answer(
     body: StopRequest,
-    user: SessionUser = Depends(get_current_user),
+    user: Annotated[SessionUser, Depends(get_current_user)],
 ) -> Response:
     """Stop an in-progress generation for a streaming answer."""
     return Response(status_code=204)

@@ -7,6 +7,8 @@ in `app.auth` so every other router can depend on `get_current_user` without
 caring how the session got created.
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Response
 
 from app.auth import SessionUser, get_current_user
@@ -38,7 +40,7 @@ async def callback(code: str | None = None, state: str | None = None) -> StubRes
 
 
 @router.post("/auth/logout", status_code=204)
-async def logout(user: SessionUser = Depends(get_current_user)) -> Response:
+async def logout(user: Annotated[SessionUser, Depends(get_current_user)]) -> Response:
     """Terminate the session so prior conversation content is not shown.
 
     204 with no body, per spec -- a real body on a 204 response is a
