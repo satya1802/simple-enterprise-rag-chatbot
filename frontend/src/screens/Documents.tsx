@@ -240,10 +240,10 @@ const Btn = ({ variant = "secondary", className = "", style = {}, children, ...r
 export default function Screen() {
   const navigate = useNavigate();
   const [documents, setDocuments] = React.useState(INITIAL_DOCUMENTS);
-  const [staged, setStaged] = React.useState([]);
-  const [rejections, setRejections] = React.useState([]);
+  const [staged, setStaged] = React.useState<Array<{ name: string; size: number }>>([]);
+  const [rejections, setRejections] = React.useState<Array<{ name: string; reason: string }>>([]);
   const [formError, setFormError] = React.useState("");
-  const [banner, setBanner] = React.useState(null);
+  const [banner, setBanner] = React.useState<{ tone: string; text: string } | null>(null);
   const [live, setLive] = React.useState("");
   const [dragging, setDragging] = React.useState(false);
 
@@ -251,16 +251,16 @@ export default function Screen() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [mineOnly, setMineOnly] = React.useState(false);
 
-  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<(typeof INITIAL_DOCUMENTS)[number] | null>(null);
 
-  const fileInputRef = React.useRef(null);
-  const dialogRef = React.useRef(null);
-  const returnFocusRef = React.useRef(null);
-  const deadlines = React.useRef({});
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const returnFocusRef = React.useRef<HTMLElement | null>(null);
+  const deadlines = React.useRef<Record<string, number>>({});
 
   /* ---- indexing pipeline: Processing -> Ready / No readable text ---- */
   React.useEffect(() => {
-    const timers = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     documents
       .filter((d) => d.status === "Processing")
       .forEach((d, i) => {
@@ -302,16 +302,18 @@ export default function Screen() {
     if (returnFocusRef.current && returnFocusRef.current.focus) returnFocusRef.current.focus();
   };
 
-  const onDialogKeyDown = (e) => {
+  const onDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
       e.stopPropagation();
       closeDialog();
       return;
     }
     if (e.key === "Tab" && dialogRef.current) {
-      const nodes = Array.from(dialogRef.current.querySelectorAll("button, [href], input, select, textarea")).filter(
-        (n) => !n.disabled
-      );
+      const nodes = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement & { disabled?: boolean }>(
+          "button, [href], input, select, textarea"
+        )
+      ).filter((n) => !n.disabled);
       if (nodes.length === 0) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
@@ -326,7 +328,7 @@ export default function Screen() {
   };
 
   /* ---- staging files ---- */
-  const stageFiles = (fileList) => {
+  const stageFiles = (fileList: FileList | null | undefined) => {
     const incoming = Array.from(fileList || []).map((f) => ({ name: f.name, size: f.size }));
     if (incoming.length === 0) return;
     setFormError("");
@@ -336,16 +338,16 @@ export default function Screen() {
     });
   };
 
-  const removeStaged = (name) => setStaged((prev) => prev.filter((f) => f.name !== name));
+  const removeStaged = (name: string) => setStaged((prev) => prev.filter((f) => f.name !== name));
 
-  const handleUpload = (e) => {
+  const handleUpload = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (staged.length === 0) {
       setFormError("Choose at least one file to upload.");
       return;
     }
-    const accepted = [];
-    const refused = [];
+    const accepted: Array<{ name: string; size: number }> = [];
+    const refused: Array<{ name: string; reason: string }> = [];
     staged.forEach((f) => {
       const ext = extOf(f.name);
       if (!ALLOWED_EXT.includes(ext)) {
@@ -394,13 +396,14 @@ export default function Screen() {
   };
 
   /* ---- deletion ---- */
-  const askDelete = (doc, e) => {
-    returnFocusRef.current = e && e.currentTarget ? e.currentTarget : null;
+  const askDelete = (doc: (typeof INITIAL_DOCUMENTS)[number], e?: React.SyntheticEvent) => {
+    returnFocusRef.current = e && e.currentTarget ? (e.currentTarget as HTMLElement) : null;
     setDeleteTarget(doc);
   };
 
   const confirmDelete = () => {
     const doc = deleteTarget;
+    if (!doc) return;
     setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
     delete deadlines.current[doc.id];
     const now = new Date();
@@ -416,7 +419,7 @@ export default function Screen() {
     }
   };
 
-  const openFile = (doc) => {
+  const openFile = (doc: (typeof INITIAL_DOCUMENTS)[number]) => {
     setLive(`Opening ${doc.filename} from document storage.`);
     setBanner({ tone: "neutral", text: `Opening “${doc.filename}” from document storage (GET /documents/${doc.id}/file).` });
   };
