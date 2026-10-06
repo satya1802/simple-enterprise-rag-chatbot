@@ -1,10 +1,3 @@
 {
-  "key": {
-    "app_design_id": "d0d3fdbc-975e-42f4-9d00-ca090ca03c37",
-    "app_design_version": 1,
-    "architecture_document_id": "a8fdb0e9-41f9-486a-ae85-2ae4bef20118",
-    "architecture_version": 2
-  },
-  "outcome": "attempted-incomplete",
-  "prepared_by_run": "9a869204-063a-4221-9c90-996c8615630b"
+  "key": "__repreparation_requested__"
 }
