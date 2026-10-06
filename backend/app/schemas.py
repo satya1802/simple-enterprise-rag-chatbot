@@ -4,6 +4,8 @@ One pair per entity in the approved data model, plus the placeholder every
 generated route returns until it has been implemented.
 """
 
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -18,3 +20,123 @@ class StubResponse(BaseModel):
     endpoint: str
     status: str = "not_implemented"
     detail: str = "Scaffolded from the approved API spec; no behaviour yet."
+
+
+# ---------------------------------------------------------------------------
+# users
+# ---------------------------------------------------------------------------
+
+
+class UserOut(BaseModel):
+    """GET /me response: display name and role derived from group claims."""
+
+    id: str
+    display_name: str
+    is_admin: bool
+
+
+# ---------------------------------------------------------------------------
+# documents
+# ---------------------------------------------------------------------------
+
+
+class DocumentUploadResult(BaseModel):
+    """One entry of the POST /documents response, per accepted file."""
+
+    document_id: str
+    filename: str
+    status: str
+
+
+class DocumentRejection(BaseModel):
+    """One entry of the POST /documents per-file rejection list."""
+
+    filename: str
+    reason: str
+
+
+class DocumentOut(BaseModel):
+    """One row of GET /documents."""
+
+    id: str
+    filename: str
+    format: str
+    uploader: str
+    uploaded_at: datetime
+    status: str
+    status_reason: str | None = None
+
+
+class DocumentListResponse(BaseModel):
+    items: list[DocumentOut]
+    total: int
+
+
+# ---------------------------------------------------------------------------
+# conversations, messages, citations, feedback
+# ---------------------------------------------------------------------------
+
+
+class CitationOut(BaseModel):
+    document_id: str
+    source_type: str
+    source_url: str | None = None
+
+
+class MessageOut(BaseModel):
+    role: str
+    content: str
+    citations: list[CitationOut] = []
+
+
+class ConversationSummary(BaseModel):
+    """One entry of GET /conversations."""
+
+    id: str
+    title: str | None = None
+    created_at: datetime
+
+
+class ConversationDetail(BaseModel):
+    """GET /conversations/{id} response."""
+
+    id: str
+    title: str | None = None
+    messages: list[MessageOut] = []
+
+
+class FeedbackRequest(BaseModel):
+    """POST /messages/{id}/feedback request body."""
+
+    rating: int
+
+
+# ---------------------------------------------------------------------------
+# answer engine
+# ---------------------------------------------------------------------------
+
+
+class AnswerRequest(BaseModel):
+    """POST /answer request body."""
+
+    question: str
+    conversation_id: str | None = None
+
+
+class TokenUsage(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+
+
+class AnswerResult(BaseModel):
+    """The structured payload that follows the streamed tokens on POST /answer."""
+
+    citations: list[CitationOut] = []
+    not_covered: bool
+    token_usage: TokenUsage
+
+
+class StopRequest(BaseModel):
+    """POST /answer/stop request body."""
+
+    stream_id: str

@@ -13,3 +13,12 @@ pytest>=8.3
 # back to show on the development dashboard.
 pytest-cov>=5.0
 ruff>=0.6
+
+# Architecture-named dependencies: declared now so the toolchain already
+# resolves them and the configs that need them can exist; the handlers that
+# call them are the development sprint's work.
+python-multipart>=0.0.9   # FastAPI/Starlette needs this to parse the multipart upload on POST /documents
+boto3>=1.35               # object_store (S3), job_queue (SQS) and model_provider (Bedrock) all go through this one client
+pgvector>=0.3             # chunks.embedding vector(1024) column type for the Postgres + pgvector store
+authlib>=1.3              # OIDC client for auth: Corporate SSO against Microsoft Entra ID
+itsdangerous>=2.2         # signs the session cookie FastAPI issues after the OIDC callback
