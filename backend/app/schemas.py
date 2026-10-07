@@ -72,6 +72,18 @@ class DocumentListResponse(BaseModel):
     total: int
 
 
+class DocumentUploadResponse(BaseModel):
+    """POST /documents response: per-file accepted/rejected outcome.
+
+    Every accepted document joins the shared, company-wide knowledge base --
+    answerable to all employees -- so there is deliberately no visibility,
+    owner-scope or privacy field here or anywhere else on this shape.
+    """
+
+    accepted: list[DocumentUploadResult] = []
+    rejected: list[DocumentRejection] = []
+
+
 # ---------------------------------------------------------------------------
 # conversations, messages, citations, feedback
 # ---------------------------------------------------------------------------

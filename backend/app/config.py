@@ -24,6 +24,12 @@ APP_BASE_URL = os.getenv("APP_BASE_URL", "/")
 # object_store: Amazon S3 (private bucket) -- original uploaded files.
 S3_BUCKET = os.getenv("S3_BUCKET", "")
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+# When S3_BUCKET is unset, uploads fall back to this local directory so the
+# upload endpoint works with no AWS account configured, same convention as
+# DATABASE_URL defaulting to a local SQLite file.
+LOCAL_UPLOAD_DIR = os.getenv("LOCAL_UPLOAD_DIR", "./uploads")
+# Largest accepted upload, in bytes. Default is 25 MiB.
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
 
 # job_queue: Amazon SQS -- decouples upload acceptance from ingestion.
 SQS_INGEST_QUEUE_URL = os.getenv("SQS_INGEST_QUEUE_URL", "")

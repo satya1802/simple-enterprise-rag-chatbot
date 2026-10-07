@@ -5,6 +5,15 @@ import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
+import { useAuth } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
+import {
+  deleteDocument,
+  documentFileUrl,
+  listDocuments,
+  uploadDocuments,
+  type DocumentItem,
+} from "@/lib/documents";
 
 const { Card, Input, Label, Table, THead, TBody, TR, TH, TD } = UI;
 const {
@@ -27,186 +36,30 @@ const {
 const MAX_BYTES = 25 * 1024 * 1024;
 const MAX_LABEL = "25 MB";
 const ALLOWED_EXT = ["pdf", "docx", "txt", "md"];
-
-const CURRENT_USER = "Satya Ganaraju";
+const PAGE_SIZE = 10;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const STATUSES = ["Ready", "Processing", "No readable text", "Failed"];
 
-const INITIAL_DOCUMENTS = [
-  {
-    id: "doc_8f21",
-    filename: "Expense-Policy-FIN-204.pdf",
-    format: "PDF",
-    size_bytes: 1887437,
-    uploader: "Priya Raghunathan",
-    uploaded_at: "2026-10-06T09:12:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8e07",
-    filename: "Security-Incident-Response-v4.pdf",
-    format: "PDF",
-    size_bytes: 3565158,
-    uploader: "Lena Hoffmann",
-    uploaded_at: "2026-10-06T08:55:00",
-    status: "Processing",
-    status_reason: "",
-  },
-  {
-    id: "doc_8d55",
-    filename: "Customer-Support-Escalation-Matrix.docx",
-    format: "DOCX",
-    size_bytes: 757760,
-    uploader: "Dana Whitfield",
-    uploaded_at: "2026-10-05T17:21:00",
-    status: "Processing",
-    status_reason: "",
-  },
-  {
-    id: "doc_8c90",
-    filename: "Onboarding-Checklist-2026.docx",
-    format: "DOCX",
-    size_bytes: 626688,
-    uploader: "Marcus Bell",
-    uploaded_at: "2026-10-05T16:40:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8b12",
-    filename: "ATLAS-Release-Runbook.md",
-    format: "MD",
-    size_bytes: 49152,
-    uploader: CURRENT_USER,
-    uploaded_at: "2026-10-05T11:03:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8a44",
-    filename: "Finance-Close-Calendar-FY26.pdf",
-    format: "PDF",
-    size_bytes: 2202010,
-    uploader: "Tomas Lindqvist",
-    uploaded_at: "2026-10-04T15:58:00",
-    status: "Failed",
-    status_reason:
-      "The file is corrupt and could not be parsed (unexpected end of file). Delete it and upload a fresh export.",
-  },
-  {
-    id: "doc_89f3",
-    filename: "Q3-Vendor-Assessment-scan.pdf",
-    format: "PDF",
-    size_bytes: 10066330,
-    uploader: "Dana Whitfield",
-    uploaded_at: "2026-10-04T14:22:00",
-    status: "No readable text",
-    status_reason:
-      "No text layer was found. Release one reads text-only PDFs — scanned or image-only files are not read. Re-upload a text PDF or a DOCX version.",
-  },
-  {
-    id: "doc_88a1",
-    filename: "Contractor-Travel-Rates.txt",
-    format: "TXT",
-    size_bytes: 11264,
-    uploader: "Joaquín Ferrer",
-    uploaded_at: "2026-10-03T10:06:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8792",
-    filename: "Data-Retention-Standard-SEC-118.pdf",
-    format: "PDF",
-    size_bytes: 1258291,
-    uploader: "Amara Okonjo",
-    uploaded_at: "2026-10-02T13:47:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8650",
-    filename: "HR-Leave-Guidelines-2026.docx",
-    format: "DOCX",
-    size_bytes: 839680,
-    uploader: "Marcus Bell",
-    uploaded_at: "2026-10-02T09:30:00",
-    status: "Failed",
-    status_reason: "The document is password-protected, so no text could be extracted.",
-  },
-  {
-    id: "doc_8533",
-    filename: "Procurement-Thresholds.md",
-    format: "MD",
-    size_bytes: 22528,
-    uploader: CURRENT_USER,
-    uploaded_at: "2026-10-01T16:12:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8420",
-    filename: "Office-Access-and-Badging.txt",
-    format: "TXT",
-    size_bytes: 7168,
-    uploader: "Priya Raghunathan",
-    uploaded_at: "2026-09-30T11:55:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8318",
-    filename: "Remote-Work-Standard-HR-087.pdf",
-    format: "PDF",
-    size_bytes: 983040,
-    uploader: "Amara Okonjo",
-    uploaded_at: "2026-09-29T14:08:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8205",
-    filename: "ATLAS-Sprint-42-Retro-Notes.md",
-    format: "MD",
-    size_bytes: 36864,
-    uploader: "Joaquín Ferrer",
-    uploaded_at: "2026-09-29T09:44:00",
-    status: "Ready",
-    status_reason: "",
-  },
-  {
-    id: "doc_8101",
-    filename: "Brand-and-Tone-Guidelines-2026.pdf",
-    format: "PDF",
-    size_bytes: 5557453,
-    uploader: "Lena Hoffmann",
-    uploaded_at: "2026-09-28T15:20:00",
-    status: "Ready",
-    status_reason: "",
-  },
-];
-
-function fmtSize(bytes) {
+function fmtSize(bytes: number) {
   if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + " MB";
   return Math.max(1, Math.round(bytes / 1024)) + " KB";
 }
 
-function fmtDate(iso) {
+function fmtDate(iso: string) {
   const d = new Date(iso);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} · ${hh}:${mm}`;
 }
 
-function extOf(name) {
+function extOf(name: string) {
   const parts = String(name).split(".");
-  return parts.length > 1 ? parts.pop().toLowerCase() : "";
+  return parts.length > 1 ? (parts.pop() as string).toLowerCase() : "";
 }
 
-const STATUS_STYLE = {
+const STATUS_STYLE: Record<string, { fg: string; bg: string; bd: string; icon: string }> = {
   Ready: {
     fg: "#1C5D4A",
     bg: "rgba(28, 93, 74, 0.10)",
@@ -233,7 +86,7 @@ const STATUS_STYLE = {
   },
 };
 
-const StatusPill = ({ status }) => {
+const StatusPill = ({ status }: { status: string }) => {
   const s = STATUS_STYLE[status] || STATUS_STYLE.Processing;
   const Icon = Icons[s.icon];
   return (
@@ -247,10 +100,16 @@ const StatusPill = ({ status }) => {
   );
 };
 
-const Btn = ({ variant = "secondary", className = "", style = {}, children, ...rest }) => {
+const Btn = ({
+  variant = "secondary",
+  className = "",
+  style = {},
+  children,
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) => {
   const base =
     "inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A] disabled:opacity-50 disabled:cursor-not-allowed";
-  const variants = {
+  const variants: Record<string, { cls: string; st: React.CSSProperties }> = {
     primary: {
       cls: "px-4 py-2 text-white hover:opacity-90",
       st: { backgroundColor: brand.primaryColor },
@@ -280,63 +139,83 @@ const Btn = ({ variant = "secondary", className = "", style = {}, children, ...r
 
 export default function Screen() {
   const navigate = useNavigate();
-  const [documents, setDocuments] = React.useState(INITIAL_DOCUMENTS);
-  const [staged, setStaged] = React.useState<Array<{ name: string; size: number }>>([]);
+  const { user, refresh } = useAuth();
+  const currentUserName = user?.display_name ?? "";
+
+  const [documents, setDocuments] = React.useState<DocumentItem[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [loading, setLoading] = React.useState(true);
+  const [loadError, setLoadError] = React.useState("");
+
+  const [staged, setStaged] = React.useState<File[]>([]);
   const [rejections, setRejections] = React.useState<Array<{ name: string; reason: string }>>([]);
   const [formError, setFormError] = React.useState("");
   const [banner, setBanner] = React.useState<{ tone: string; text: string } | null>(null);
   const [live, setLive] = React.useState("");
   const [dragging, setDragging] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
 
   const [query, setQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
-  const [mineOnly, setMineOnly] = React.useState(false);
 
-  const [deleteTarget, setDeleteTarget] = React.useState<(typeof INITIAL_DOCUMENTS)[number] | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = React.useState<DocumentItem | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const returnFocusRef = React.useRef<HTMLElement | null>(null);
-  const deadlines = React.useRef<Record<string, number>>({});
+  const didMountRef = React.useRef(false);
 
-  /* ---- indexing pipeline: Processing -> Ready / No readable text ---- */
+  const handle401 = React.useCallback(
+    async (err: unknown): Promise<boolean> => {
+      if (err instanceof ApiError && err.status === 401) {
+        await refresh();
+        return true;
+      }
+      return false;
+    },
+    [refresh],
+  );
+
+  const fetchDocuments = React.useCallback(
+    async (targetPage: number, q: string) => {
+      setLoading(true);
+      setLoadError("");
+      try {
+        const res = await listDocuments({ q, page: targetPage, page_size: PAGE_SIZE });
+        setDocuments(res.items);
+        setTotal(res.total);
+        setPage(targetPage);
+      } catch (err) {
+        if (await handle401(err)) return;
+        setLoadError("The knowledge base could not be loaded. Check your connection and try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handle401],
+  );
+
+  /* ---- initial load, then search-driven refetch ---- */
   React.useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    documents
-      .filter((d) => d.status === "Processing")
-      .forEach((d, i) => {
-        if (!deadlines.current[d.id]) deadlines.current[d.id] = Date.now() + 6000 + i * 2500;
-        const delay = Math.max(500, deadlines.current[d.id] - Date.now());
-        timers.push(
-          setTimeout(() => {
-            setDocuments((prev) =>
-              prev.map((x) => {
-                if (x.id !== d.id) return x;
-                const scanned = x.format === "PDF" && /scan|image|photo/i.test(x.filename);
-                return scanned
-                  ? {
-                      ...x,
-                      status: "No readable text",
-                      status_reason:
-                        "No text layer was found. Release one reads text-only PDFs — scanned or image-only files are not read.",
-                    }
-                  : { ...x, status: "Ready", status_reason: "" };
-              }),
-            );
-            setLive(`${d.filename} finished processing and is now answerable.`);
-          }, delay),
-        );
-      });
-    return () => timers.forEach(clearTimeout);
-  }, [documents]);
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      void fetchDocuments(1, "");
+      return;
+    }
+    const timer = setTimeout(() => {
+      void fetchDocuments(1, query);
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   /* ---- delete dialog focus management ---- */
   React.useEffect(() => {
     if (deleteTarget && dialogRef.current) {
       const first = dialogRef.current.querySelector("button");
-      if (first) first.focus();
+      if (first) (first as HTMLElement).focus();
     }
   }, [deleteTarget]);
 
@@ -372,7 +251,7 @@ export default function Screen() {
 
   /* ---- staging files ---- */
   const stageFiles = (fileList: FileList | null | undefined) => {
-    const incoming = Array.from(fileList || []).map((f) => ({ name: f.name, size: f.size }));
+    const incoming = Array.from(fileList || []);
     if (incoming.length === 0) return;
     setFormError("");
     setStaged((prev) => {
@@ -383,123 +262,126 @@ export default function Screen() {
 
   const removeStaged = (name: string) => setStaged((prev) => prev.filter((f) => f.name !== name));
 
-  const handleUpload = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (staged.length === 0) {
       setFormError("Choose at least one file to upload.");
       return;
     }
-    const accepted: Array<{ name: string; size: number }> = [];
-    const refused: Array<{ name: string; reason: string }> = [];
+    const valid: File[] = [];
+    const clientRejected: Array<{ name: string; reason: string }> = [];
     staged.forEach((f) => {
       const ext = extOf(f.name);
       if (!ALLOWED_EXT.includes(ext)) {
-        refused.push({
+        clientRejected.push({
           name: f.name,
           reason: `Unsupported format${ext ? ` “.${ext}”` : ""}. The knowledge base accepts PDF, DOCX, TXT and Markdown (.md) only.`,
         });
       } else if (f.size > MAX_BYTES) {
-        refused.push({
+        clientRejected.push({
           name: f.name,
           reason: `${fmtSize(f.size)} exceeds the ${MAX_LABEL} maximum upload size.`,
         });
       } else {
-        accepted.push(f);
+        valid.push(f);
       }
     });
 
-    const stamp = Date.now();
-    const newDocs = accepted.map((f, i) => ({
-      id: `doc_${stamp.toString(36)}${i}`,
-      filename: f.name,
-      format: extOf(f.name).toUpperCase(),
-      size_bytes: f.size,
-      uploader: CURRENT_USER,
-      uploaded_at: new Date().toISOString(),
-      status: "Processing",
-      status_reason: "",
-    }));
-
-    if (newDocs.length) setDocuments((prev) => [...newDocs, ...prev]);
-    setRejections(refused);
-    setStaged([]);
     setFormError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
 
-    if (newDocs.length) {
-      setBanner({
-        tone: "success",
-        text: `${newDocs.length} ${newDocs.length === 1 ? "file" : "files"} added to the shared company-wide knowledge base. Text extraction, chunking and embedding have started — each document becomes answerable to every employee once it reaches Ready.`,
-      });
-      setLive(`${newDocs.length} uploaded. Processing started.`);
-    } else {
+    if (valid.length === 0) {
+      setRejections(clientRejected);
+      setStaged([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setBanner(null);
       setLive("No files were accepted.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const res = await uploadDocuments(valid);
+      setRejections([
+        ...clientRejected,
+        ...res.rejected.map((r) => ({ name: r.filename, reason: r.reason })),
+      ]);
+      setStaged([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      if (res.accepted.length) {
+        setBanner({
+          tone: "success",
+          text: `${res.accepted.length} ${res.accepted.length === 1 ? "file" : "files"} added to the shared company-wide knowledge base. They are now visible and answerable to all employees as they finish processing.`,
+        });
+        setLive(`${res.accepted.length} uploaded. Processing started.`);
+        setQuery("");
+        await fetchDocuments(1, "");
+      } else {
+        setBanner(null);
+        setLive("No files were accepted.");
+      }
+    } catch (err) {
+      if (await handle401(err)) return;
+      setRejections(clientRejected);
+      setStaged([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setFormError("Upload failed. Check your connection and try again.");
+    } finally {
+      setUploading(false);
     }
   };
 
   /* ---- deletion ---- */
-  const askDelete = (doc: (typeof INITIAL_DOCUMENTS)[number], e?: React.SyntheticEvent) => {
+  const askDelete = (doc: DocumentItem, e?: React.SyntheticEvent) => {
     returnFocusRef.current = e && e.currentTarget ? (e.currentTarget as HTMLElement) : null;
     setDeleteTarget(doc);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const doc = deleteTarget;
     if (!doc) return;
-    setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-    delete deadlines.current[doc.id];
-    const now = new Date();
-    setBanner({
-      tone: "neutral",
-      text: `“${doc.filename}” was removed for all employees — its file, chunks and embeddings are deleted from the index. Audit log entry recorded for ${CURRENT_USER} at ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}.`,
-    });
-    setLive(`${doc.filename} deleted from the shared corpus.`);
-    setDeleteTarget(null);
-    if (returnFocusRef.current && returnFocusRef.current.focus) {
-      // the row is gone; move focus somewhere sensible
-      returnFocusRef.current = null;
+    setDeleting(true);
+    try {
+      await deleteDocument(doc.id);
+      setBanner({
+        tone: "neutral",
+        text: `“${doc.filename}” was removed for all employees — its file, chunks and embeddings are deleted from the index.`,
+      });
+      setLive(`${doc.filename} deleted from the shared corpus.`);
+      setDeleteTarget(null);
+      await fetchDocuments(page, query);
+    } catch (err) {
+      if (await handle401(err)) return;
+      setBanner({ tone: "neutral", text: `Could not delete “${doc.filename}”. Try again.` });
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const openFile = (doc: (typeof INITIAL_DOCUMENTS)[number]) => {
-    setLive(`Opening ${doc.filename} from document storage.`);
-    setBanner({
-      tone: "neutral",
-      text: `Opening “${doc.filename}” from document storage (GET /documents/${doc.id}/file).`,
-    });
+  const openFile = (doc: DocumentItem) => {
+    window.open(documentFileUrl(doc.id), "_blank", "noopener,noreferrer");
   };
 
-  /* ---- filtering ---- */
-  const filtered = documents.filter((d) => {
-    const q = query.trim().toLowerCase();
-    if (q && !d.filename.toLowerCase().includes(q)) return false;
-    if (statusFilter !== "all" && d.status !== statusFilter) return false;
-    if (mineOnly && d.uploader !== CURRENT_USER) return false;
-    return true;
-  });
+  /* ---- client-side status filter on the current page ---- */
+  const visible = documents.filter((d) => statusFilter === "all" || d.status === statusFilter);
 
-  const counts = {
-    total: documents.length,
-    ready: documents.filter((d) => d.status === "Ready").length,
-    processing: documents.filter((d) => d.status === "Processing").length,
-    attention: documents.filter((d) => d.status === "Failed" || d.status === "No readable text")
-      .length,
-  };
-
-  const filtersActive = query.trim() !== "" || statusFilter !== "all" || mineOnly;
+  const filtersActive = query.trim() !== "" || statusFilter !== "all";
   const clearFilters = () => {
     setQuery("");
     setStatusFilter("all");
-    setMineOnly(false);
   };
 
-  const summary = [
-    { label: "Documents in corpus", value: counts.total },
-    { label: "Ready to answer", value: counts.ready },
-    { label: "Processing", value: counts.processing },
-    { label: "Need attention", value: counts.attention },
-  ];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const goPrev = () => {
+    if (page > 1) void fetchDocuments(page - 1, query);
+  };
+  const goNext = () => {
+    if (page < totalPages) void fetchDocuments(page + 1, query);
+  };
+
+  const corpusEmpty = !loading && !loadError && total === 0 && query.trim() === "";
+  const noMatches = !loading && !loadError && total === 0 && query.trim() !== "";
+  const statusFilterHidAll = !loading && !loadError && total > 0 && visible.length === 0;
 
   return (
     <div
@@ -560,35 +442,6 @@ export default function Screen() {
         </p>
       </div>
 
-      {/* Summary */}
-      <section aria-labelledby="corpus-summary-heading" className="mt-6">
-        <h2 id="corpus-summary-heading" className="sr-only">
-          Corpus summary
-        </h2>
-        <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {summary.map((s) => (
-            <div
-              key={s.label}
-              className="border bg-white px-4 py-3"
-              style={{ borderColor: "#DEE3E0", borderRadius: brand.radius }}
-            >
-              <dt
-                className="text-xs font-medium uppercase tracking-wide"
-                style={{ color: brand.neutralColor }}
-              >
-                {s.label}
-              </dt>
-              <dd
-                className="mt-1 text-2xl font-semibold"
-                style={{ color: "#15201D", fontFamily: brand.fontHeading }}
-              >
-                {s.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
       {/* Upload */}
       <section aria-labelledby="upload-heading" className="mt-8">
         <UI.Card>
@@ -648,11 +501,13 @@ export default function Screen() {
                       processing status.
                     </p>
                   </div>
-                  <Btn type="submit" variant="primary" className="shrink-0">
+                  <Btn type="submit" variant="primary" className="shrink-0" disabled={uploading}>
                     <Icons.Upload className="h-4 w-4" aria-hidden="true" />
-                    {staged.length > 0
-                      ? `Upload ${staged.length} ${staged.length === 1 ? "file" : "files"}`
-                      : "Upload to shared corpus"}
+                    {uploading
+                      ? "Uploading…"
+                      : staged.length > 0
+                        ? `Upload ${staged.length} ${staged.length === 1 ? "file" : "files"}`
+                        : "Upload to shared corpus"}
                   </Btn>
                 </div>
 
@@ -838,20 +693,6 @@ export default function Screen() {
                     ))}
                   </select>
                 </div>
-
-                <div className="flex items-center gap-2 pb-2.5">
-                  <input
-                    id="mine-only"
-                    type="checkbox"
-                    checked={mineOnly}
-                    onChange={(e) => setMineOnly(e.target.checked)}
-                    className="h-4 w-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A]"
-                    style={{ accentColor: brand.primaryColor }}
-                  />
-                  <label htmlFor="mine-only" className="text-sm" style={{ color: "#283330" }}>
-                    Only documents I uploaded
-                  </label>
-                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -865,12 +706,47 @@ export default function Screen() {
             </div>
 
             <p className="mt-4 text-sm" style={{ color: brand.neutralColor }} aria-live="polite">
-              Showing {filtered.length} of {documents.length}{" "}
-              {documents.length === 1 ? "document" : "documents"}
+              {loading
+                ? "Loading documents…"
+                : `Showing ${visible.length} of ${total} ${total === 1 ? "document" : "documents"}`}
             </p>
 
-            {/* Table / empty states */}
-            {documents.length === 0 ? (
+            {/* Loading / error / empty states / table */}
+            {loading ? (
+              <div
+                className="mt-4 border border-dashed px-6 py-12 text-center"
+                style={{ borderColor: "#CDD5D1", borderRadius: brand.radius }}
+                role="status"
+              >
+                <p className="text-sm" style={{ color: brand.neutralColor }}>
+                  Loading the knowledge base…
+                </p>
+              </div>
+            ) : loadError ? (
+              <div
+                role="alert"
+                className="mt-4 border px-6 py-10 text-center"
+                style={{
+                  borderColor: "rgba(140, 47, 57, 0.35)",
+                  backgroundColor: "rgba(140, 47, 57, 0.06)",
+                  borderRadius: brand.radius,
+                }}
+              >
+                <Icons.AlertCircle
+                  className="mx-auto h-8 w-8"
+                  aria-hidden="true"
+                  style={{ color: brand.accentColor }}
+                />
+                <h3 className="mt-3 text-base font-semibold" style={{ color: "#5C2027" }}>
+                  {loadError}
+                </h3>
+                <div className="mt-5">
+                  <Btn variant="secondary" onClick={() => void fetchDocuments(page, query)}>
+                    Try again
+                  </Btn>
+                </div>
+              </div>
+            ) : corpusEmpty ? (
               <div
                 className="mt-4 border border-dashed px-6 py-12 text-center"
                 style={{ borderColor: "#CDD5D1", borderRadius: brand.radius }}
@@ -901,7 +777,7 @@ export default function Screen() {
                   </Btn>
                 </div>
               </div>
-            ) : filtered.length === 0 ? (
+            ) : noMatches || statusFilterHidAll ? (
               <div
                 className="mt-4 border border-dashed px-6 py-12 text-center"
                 style={{ borderColor: "#CDD5D1", borderRadius: brand.radius }}
@@ -929,99 +805,120 @@ export default function Screen() {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 overflow-x-auto">
-                <UI.Table>
-                  <UI.THead>
-                    <UI.TR>
-                      <UI.TH scope="col">Document</UI.TH>
-                      <UI.TH scope="col">Uploaded by</UI.TH>
-                      <UI.TH scope="col">Uploaded</UI.TH>
-                      <UI.TH scope="col">Status</UI.TH>
-                      <UI.TH scope="col">
-                        <span className="sr-only">Actions</span>
-                      </UI.TH>
-                    </UI.TR>
-                  </UI.THead>
-                  <UI.TBody>
-                    {filtered.map((d) => (
-                      <UI.TR key={d.id}>
-                        <UI.TD>
-                          <div className="flex items-start gap-3">
-                            <Icons.FileText
-                              className="mt-0.5 h-4 w-4 shrink-0"
-                              aria-hidden="true"
-                              style={{ color: brand.neutralColor }}
-                            />
-                            <div className="min-w-0 max-w-[16rem] sm:max-w-xs">
-                              <button
-                                type="button"
-                                onClick={() => openFile(d)}
-                                aria-label={`Open ${d.filename}`}
-                                title={d.filename}
-                                className="block w-full truncate text-left text-sm font-medium underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A]"
-                                style={{ color: brand.primaryColor, borderRadius: brand.radius }}
-                              >
-                                {d.filename}
-                              </button>
-                              <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
-                                {d.format} · {fmtSize(d.size_bytes)} · Upload
-                              </p>
-                            </div>
-                          </div>
-                        </UI.TD>
-                        <UI.TD>
-                          <span className="text-sm">
-                            {d.uploader}
-                            {d.uploader === CURRENT_USER && (
-                              <span className="ml-1 text-xs" style={{ color: brand.neutralColor }}>
-                                (you)
-                              </span>
-                            )}
-                          </span>
-                        </UI.TD>
-                        <UI.TD>
-                          <span
-                            className="whitespace-nowrap text-sm"
-                            style={{ color: brand.neutralColor }}
-                          >
-                            {fmtDate(d.uploaded_at)}
-                          </span>
-                        </UI.TD>
-                        <UI.TD>
-                          <StatusPill status={d.status} />
-                          {d.status_reason && (
-                            <p
-                              className="mt-2 max-w-sm text-xs leading-5"
-                              style={{ color: "#6B3036" }}
-                            >
-                              {d.status_reason}
-                            </p>
-                          )}
-                        </UI.TD>
-                        <UI.TD>
-                          <div className="flex items-center justify-end gap-1">
-                            <Btn
-                              variant="ghost"
-                              aria-label={`Open ${d.filename}`}
-                              onClick={() => openFile(d)}
-                            >
-                              <Icons.Download className="h-4 w-4" aria-hidden="true" />
-                            </Btn>
-                            <Btn
-                              variant="ghost"
-                              aria-label={`Delete ${d.filename} from the shared corpus`}
-                              onClick={(e) => askDelete(d, e)}
-                              style={{ color: brand.accentColor }}
-                            >
-                              <Icons.Trash className="h-4 w-4" aria-hidden="true" />
-                            </Btn>
-                          </div>
-                        </UI.TD>
+              <>
+                <div className="mt-4 overflow-x-auto">
+                  <UI.Table>
+                    <UI.THead>
+                      <UI.TR>
+                        <UI.TH scope="col">Document</UI.TH>
+                        <UI.TH scope="col">Uploaded by</UI.TH>
+                        <UI.TH scope="col">Uploaded</UI.TH>
+                        <UI.TH scope="col">Status</UI.TH>
+                        <UI.TH scope="col">
+                          <span className="sr-only">Actions</span>
+                        </UI.TH>
                       </UI.TR>
-                    ))}
-                  </UI.TBody>
-                </UI.Table>
-              </div>
+                    </UI.THead>
+                    <UI.TBody>
+                      {visible.map((d) => (
+                        <UI.TR key={d.id}>
+                          <UI.TD>
+                            <div className="flex items-start gap-3">
+                              <Icons.FileText
+                                className="mt-0.5 h-4 w-4 shrink-0"
+                                aria-hidden="true"
+                                style={{ color: brand.neutralColor }}
+                              />
+                              <div className="min-w-0 max-w-[16rem] sm:max-w-xs">
+                                <button
+                                  type="button"
+                                  onClick={() => openFile(d)}
+                                  aria-label={`Open ${d.filename}`}
+                                  title={d.filename}
+                                  className="block w-full truncate text-left text-sm font-medium underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A]"
+                                  style={{ color: brand.primaryColor, borderRadius: brand.radius }}
+                                >
+                                  {d.filename}
+                                </button>
+                                <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
+                                  {d.format}
+                                </p>
+                              </div>
+                            </div>
+                          </UI.TD>
+                          <UI.TD>
+                            <span className="text-sm">
+                              {d.uploader}
+                              {currentUserName && d.uploader === currentUserName && (
+                                <span
+                                  className="ml-1 text-xs"
+                                  style={{ color: brand.neutralColor }}
+                                >
+                                  (you)
+                                </span>
+                              )}
+                            </span>
+                          </UI.TD>
+                          <UI.TD>
+                            <span
+                              className="whitespace-nowrap text-sm"
+                              style={{ color: brand.neutralColor }}
+                            >
+                              {fmtDate(d.uploaded_at)}
+                            </span>
+                          </UI.TD>
+                          <UI.TD>
+                            <StatusPill status={d.status} />
+                            {d.status_reason && (
+                              <p
+                                className="mt-2 max-w-sm text-xs leading-5"
+                                style={{ color: "#6B3036" }}
+                              >
+                                {d.status_reason}
+                              </p>
+                            )}
+                          </UI.TD>
+                          <UI.TD>
+                            <div className="flex items-center justify-end gap-1">
+                              <Btn
+                                variant="ghost"
+                                aria-label={`Open ${d.filename}`}
+                                onClick={() => openFile(d)}
+                              >
+                                <Icons.Download className="h-4 w-4" aria-hidden="true" />
+                              </Btn>
+                              <Btn
+                                variant="ghost"
+                                aria-label={`Delete ${d.filename} from the shared corpus`}
+                                onClick={(e) => askDelete(d, e)}
+                                style={{ color: brand.accentColor }}
+                              >
+                                <Icons.Trash className="h-4 w-4" aria-hidden="true" />
+                              </Btn>
+                            </div>
+                          </UI.TD>
+                        </UI.TR>
+                      ))}
+                    </UI.TBody>
+                  </UI.Table>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-sm" style={{ color: brand.neutralColor }}>
+                      Page {page} of {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Btn variant="secondary" onClick={goPrev} disabled={page <= 1}>
+                        Previous
+                      </Btn>
+                      <Btn variant="secondary" onClick={goNext} disabled={page >= totalPages}>
+                        Next
+                      </Btn>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </UI.Card>
@@ -1055,8 +952,7 @@ export default function Screen() {
               This removes the document, its stored file and all of its chunks and embeddings from
               the shared corpus. Every employee loses access to it, and the chatbot will stop citing
               it — if nothing else covers the topic it will answer “not covered by the knowledge
-              base”. The deletion is recorded in the audit log against your name. This cannot be
-              undone.
+              base”. This cannot be undone.
             </p>
             <dl
               className="mt-4 grid grid-cols-2 gap-3 border p-4 text-sm"
@@ -1084,12 +980,12 @@ export default function Screen() {
               </div>
             </dl>
             <div className="mt-6 flex justify-end gap-2">
-              <Btn variant="secondary" onClick={closeDialog}>
+              <Btn variant="secondary" onClick={closeDialog} disabled={deleting}>
                 Cancel
               </Btn>
-              <Btn variant="danger" onClick={confirmDelete}>
+              <Btn variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>
                 <Icons.Trash className="h-4 w-4" aria-hidden="true" />
-                Delete for all employees
+                {deleting ? "Deleting…" : "Delete for all employees"}
               </Btn>
             </div>
           </div>
