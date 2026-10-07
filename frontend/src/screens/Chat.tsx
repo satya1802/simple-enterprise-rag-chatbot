@@ -1,268 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 
 import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
+import { useAuth } from "@/lib/auth";
+import { dedupeCitations, streamAnswer } from "@/lib/chat";
+import type { AnswerTerminal, Citation, StreamAnswerHandle, TokenUsage } from "@/lib/chat";
 
-const { Select } = UI;
-const {
-  Plus,
-  Search,
-  Check,
-  X,
-  ChevronRight,
-  FileText,
-  Package,
-  Calendar,
-  Clock,
-  Trash,
-  Download,
-  ArrowRight,
-  AlertCircle,
-  CheckCircle,
-} = Icons;
-
-const DOCS = {
-  d1: {
-    id: "d1",
-    filename: "Travel-and-Expense-Policy-FIN-2024-07.pdf",
-    format: "PDF",
-    uploader: "Marta Lindqvist",
-    uploaded_at: "2026-09-28",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8831",
-    source_url: "/documents/8831/file",
-  },
-  d2: {
-    id: "d2",
-    filename: "Finance-Shared-Services-FAQ.docx",
-    format: "DOCX",
-    uploader: "Priya Raman",
-    uploaded_at: "2026-09-30",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8847",
-    source_url: "/documents/8847/file",
-  },
-  d3: {
-    id: "d3",
-    filename: "People-Handbook-Leave-and-Absence.md",
-    format: "Markdown",
-    uploader: "Tomas Okafor",
-    uploaded_at: "2026-10-01",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8862",
-    source_url: "/documents/8862/file",
-  },
-  d4: {
-    id: "d4",
-    filename: "Platform-Release-Runbook-v6.md",
-    format: "Markdown",
-    uploader: "Dan Whitfield",
-    uploaded_at: "2026-09-24",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8804",
-    source_url: "/documents/8804/file",
-  },
-  d5: {
-    id: "d5",
-    filename: "Security-Incident-Response-Plan.pdf",
-    format: "PDF",
-    uploader: "Hannah Ueda",
-    uploaded_at: "2026-08-19",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8710",
-    source_url: "/documents/8710/file",
-  },
-  d6: {
-    id: "d6",
-    filename: "Contractor-Engagement-Guidelines.docx",
-    format: "DOCX",
-    uploader: "Marta Lindqvist",
-    uploaded_at: "2026-10-02",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8870",
-    source_url: "/documents/8870/file",
-  },
-  d7: {
-    id: "d7",
-    filename: "IT-Onboarding-Checklist.txt",
-    format: "TXT",
-    uploader: "Service Desk",
-    uploaded_at: "2026-09-15",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8755",
-    source_url: "/documents/8755/file",
-  },
-  d8: {
-    id: "d8",
-    filename: "Platform-Release-Calendar-2026.md",
-    format: "Markdown",
-    uploader: "Dan Whitfield",
-    uploaded_at: "2026-09-24",
-    status: "Ready",
-    source_type: "Uploaded document",
-    source_id: "doc_8805",
-    source_url: "/documents/8805/file",
-  },
-};
-
-const ANSWERS = {
-  expenses: {
-    token_usage: 1284,
-    not_covered: false,
-    partial: false,
-    text: "Expense claims are governed by policy FIN-2024-07. A claim must be submitted within 30 days of the date the spend was incurred, and anything above €500 needs line-manager approval before Finance Shared Services will process it [1].\n\nDomestic per diem is €46 for a full day and €23 for a part day. Approved claims are paid in the next payroll run, and the payroll cut-off is the 18th of each month [2].",
-    citations: [
-      {
-        document_id: "d1",
-        chunk_index: 14,
-        quote:
-          "Claims must be submitted within 30 days of the date on which the expense was incurred. Claims with a total value above €500 require line-manager approval prior to processing by Finance Shared Services. Claims received after the 30-day window are returned to the claimant and require a written exception from the cost-centre owner.",
-      },
-      {
-        document_id: "d2",
-        chunk_index: 6,
-        quote:
-          "Domestic per diem is set at €46 for a full day of travel and €23 for a part day. Approved reimbursements are paid in the next payroll run following approval; the payroll cut-off is the 18th of each month.",
-      },
-    ],
-  },
-  contractors: {
-    token_usage: 1102,
-    not_covered: false,
-    partial: false,
-    text: "Contractors engaged through an agency claim expenses through their agency and not through the company expense system. Directly contracted specialists may claim pre-approved travel only, and the approval has to be recorded on the statement of work before the travel is booked [1].\n\nWhere a direct contractor does claim, the €500 manager-approval threshold in FIN-2024-07 applies to them in exactly the same way as to employees [2].",
-    citations: [
-      {
-        document_id: "d6",
-        chunk_index: 3,
-        quote:
-          "Agency-supplied contractors submit all expenses through their agency. Directly contracted specialists may claim pre-approved travel costs only; the approval must be recorded against the statement of work before travel is booked.",
-      },
-      {
-        document_id: "d1",
-        chunk_index: 14,
-        quote:
-          "Claims with a total value above €500 require line-manager approval prior to processing by Finance Shared Services. This threshold applies to all claimants processed through the expense system, including directly contracted personnel.",
-      },
-    ],
-  },
-  leave: {
-    token_usage: 965,
-    not_covered: false,
-    partial: false,
-    text: "You give at least 10 weeks' written notice before parental leave starts, addressed to your line manager and to People Operations [1]. The notice period drops to 4 weeks for an adoption placement confirmed at short notice [1].\n\nLeave is recorded in Workday before it is approved, and any holiday already booked inside the leave window has to be rescheduled by the employee [1].",
-    citations: [
-      {
-        document_id: "d3",
-        chunk_index: 21,
-        quote:
-          "Parental leave requires a minimum of 10 weeks' written notice to the line manager and People Operations. For adoption placements confirmed at short notice the notice period is reduced to 4 weeks. All leave is recorded in Workday prior to approval; previously booked holiday falling inside the leave window must be rescheduled by the employee.",
-      },
-    ],
-  },
-  release: {
-    token_usage: 1340,
-    not_covered: false,
-    partial: false,
-    text: "The Q4 change freeze runs from 18 December 2026 to 2 January 2027 inclusive, and no production deployments are made in that window. An exception needs a severity-1 justification signed off by the on-call engineering manager and recorded against the release ticket before the deploy runs [1].\n\nThe standard release train is unaffected up to 17 December; the last scheduled production deploy of the year is at 14:00 UTC on 17 December [2].",
-    citations: [
-      {
-        document_id: "d4",
-        chunk_index: 8,
-        quote:
-          "Change freeze: 18 December 2026 to 2 January 2027 inclusive. No production deployment is executed during the freeze. Exceptions require a severity-1 justification approved by the on-call engineering manager and recorded on the release ticket prior to execution.",
-      },
-      {
-        document_id: "d8",
-        chunk_index: 2,
-        quote:
-          "Release train continues on the normal weekly cadence until 17 December 2026. Final scheduled production deploy of the calendar year: 17 December, 14:00 UTC.",
-      },
-    ],
-  },
-  incident: {
-    token_usage: 1190,
-    not_covered: false,
-    partial: false,
-    text: "A severity 1 is declared when a customer-facing service is unavailable, or when the integrity of customer data is at risk [1].\n\nDeclaring it pages the on-call platform engineer and the duty incident commander immediately. The security lead is paged in parallel whenever the incident involves suspected data exposure, and the first stakeholder status update is due within 30 minutes of declaration [1].",
-    citations: [
-      {
-        document_id: "d5",
-        chunk_index: 11,
-        quote:
-          "Severity 1: a customer-facing service is unavailable, or customer data integrity is at risk. Declaration pages the on-call platform engineer and the duty incident commander. Where data exposure is suspected the security lead is paged in parallel. First stakeholder status update is due within 30 minutes of declaration.",
-      },
-    ],
-  },
-  onboarding: {
-    token_usage: 880,
-    not_covered: false,
-    partial: false,
-    text: "A new starter's laptop is ordered by the hiring manager at least five working days before the start date, and the build is collected from the Service Desk on day one with the starter present for the hand-over [1].\n\nAccounts, MFA enrolment and the security-awareness module are all completed on day one before any system access is granted [1].",
-    citations: [
-      {
-        document_id: "d7",
-        chunk_index: 1,
-        quote:
-          "Hiring manager orders the device at least five working days before the start date. The starter collects the build in person from the Service Desk on day one. Account creation, MFA enrolment and the security-awareness module are completed on day one before system access is granted.",
-      },
-    ],
-  },
-  vpn: {
-    token_usage: 1022,
-    not_covered: false,
-    partial: true,
-    text: "New starters request VPN access through the IT onboarding checklist: the line manager raises the request on the starter's first day, and access is granted once the security-awareness module has been completed [1].\n\nOne part of your question is not covered by the knowledge base. No indexed document describes the split-tunnelling configuration or the per-region VPN gateways, so I cannot answer that part.",
-    citations: [
-      {
-        document_id: "d7",
-        chunk_index: 4,
-        quote:
-          "Remote access: the line manager raises the VPN access request on the starter's first day. Access is enabled once the security-awareness module is recorded as complete.",
-      },
-    ],
-  },
-};
-
-const NOT_COVERED = {
-  token_usage: 310,
-  not_covered: true,
-  partial: false,
-  citations: [],
-  text: "I can't answer this from the knowledge base.\n\nNothing in the indexed documents covers this question, so I won't answer from the model's general knowledge. Try rephrasing it using the wording that appears in the source document, or add a document that covers it from the Knowledge base screen.",
-};
-
-const MATCHERS = [
-  { keys: ["contractor", "contractors", "agency", "freelance"], answer: ANSWERS.contractors },
-  {
-    keys: ["expense", "expenses", "claim", "per diem", "reimburs", "fin-2024", "travel"],
-    answer: ANSWERS.expenses,
-  },
-  { keys: ["parental", "leave", "maternity", "absence", "notice period"], answer: ANSWERS.leave },
-  {
-    keys: ["freeze", "release", "deploy", "deployment", "release train", "q4"],
-    answer: ANSWERS.release,
-  },
-  {
-    keys: ["severity", "sev1", "incident", "paged", "page", "breach", "outage"],
-    answer: ANSWERS.incident,
-  },
-  { keys: ["vpn", "remote access", "split tunnel"], answer: ANSWERS.vpn },
-  {
-    keys: ["laptop", "onboarding", "new starter", "device", "equipment"],
-    answer: ANSWERS.onboarding,
-  },
-];
+void UI;
 
 const SUGGESTIONS = [
   "What's the deadline for submitting an expense claim?",
@@ -271,25 +17,35 @@ const SUGGESTIONS = [
   "What triggers a severity 1 incident?",
 ];
 
-type Citation = {
-  document_id: string;
-  chunk_index: number;
-  quote: string;
+type UserMessage = {
+  id: string;
+  role: "user";
+  content: string;
+  created_at: string;
 };
 
-type Message = {
+type AssistantMessage = {
   id: string;
-  role: string;
-  content?: string;
+  role: "assistant";
+  content: string;
   created_at: string;
-  feedback?: string | null;
-  token_usage?: number;
-  not_covered?: boolean;
-  partial?: boolean;
-  stopped?: boolean;
-  citations?: Citation[];
-  text?: string;
+  citations: Citation[];
+  not_covered: boolean;
+  partial: boolean;
+  stopped: boolean;
+  token_usage: TokenUsage | null;
+  feedback?: "up" | "down" | null;
 };
+
+type ErrorMessage = {
+  id: string;
+  role: "error";
+  content: string;
+  created_at: string;
+  question: string;
+};
+
+type Message = UserMessage | AssistantMessage | ErrorMessage;
 
 type Conversation = {
   id: string;
@@ -298,142 +54,13 @@ type Conversation = {
   messages: Message[];
 };
 
-const SEED_CONVERSATIONS: Conversation[] = [
-  {
-    id: "c-1",
-    title: "Expense claim deadline and approval limits",
-    created_at: "2026-10-06T09:12:00",
-    messages: [
-      {
-        id: "m-1",
-        role: "user",
-        content:
-          "What's the deadline for submitting an expense claim, and when do I need approval?",
-        created_at: "2026-10-06T09:12:00",
-      },
-      {
-        id: "m-2",
-        role: "assistant",
-        created_at: "2026-10-06T09:12:00",
-        feedback: "up",
-        ...ANSWERS.expenses,
-      },
-      {
-        id: "m-3",
-        role: "user",
-        content: "And for contractors?",
-        created_at: "2026-10-06T09:15:00",
-      },
-      {
-        id: "m-4",
-        role: "assistant",
-        created_at: "2026-10-06T09:15:00",
-        feedback: null,
-        ...ANSWERS.contractors,
-      },
-    ],
-  },
-  {
-    id: "c-2",
-    title: "Release freeze dates for Q4",
-    created_at: "2026-10-05T16:40:00",
-    messages: [
-      {
-        id: "m-5",
-        role: "user",
-        content: "When is the Q4 release freeze and who can approve an exception?",
-        created_at: "2026-10-05T16:40:00",
-      },
-      {
-        id: "m-6",
-        role: "assistant",
-        created_at: "2026-10-05T16:40:00",
-        feedback: null,
-        ...ANSWERS.release,
-      },
-    ],
-  },
-  {
-    id: "c-3",
-    title: "Parental leave notice period",
-    created_at: "2026-10-02T11:05:00",
-    messages: [
-      {
-        id: "m-7",
-        role: "user",
-        content: "How far in advance do I have to tell my manager about parental leave?",
-        created_at: "2026-10-02T11:05:00",
-      },
-      {
-        id: "m-8",
-        role: "assistant",
-        created_at: "2026-10-02T11:05:00",
-        feedback: "up",
-        ...ANSWERS.leave,
-      },
-    ],
-  },
-  {
-    id: "c-4",
-    title: "Who gets paged for a severity 1",
-    created_at: "2026-09-29T08:23:00",
-    messages: [
-      {
-        id: "m-9",
-        role: "user",
-        content: "Who gets paged when we declare a severity 1?",
-        created_at: "2026-09-29T08:23:00",
-      },
-      {
-        id: "m-10",
-        role: "assistant",
-        created_at: "2026-09-29T08:23:00",
-        feedback: null,
-        ...ANSWERS.incident,
-      },
-    ],
-  },
-  {
-    id: "c-5",
-    title: "VPN access for new starters",
-    created_at: "2026-09-25T14:02:00",
-    messages: [
-      {
-        id: "m-11",
-        role: "user",
-        content: "How does a new starter get VPN access, and how is split tunnelling configured?",
-        created_at: "2026-09-25T14:02:00",
-      },
-      {
-        id: "m-12",
-        role: "assistant",
-        created_at: "2026-09-25T14:02:00",
-        feedback: null,
-        ...ANSWERS.vpn,
-      },
-    ],
-  },
-  {
-    id: "c-6",
-    title: "2027 revenue target",
-    created_at: "2026-09-22T17:30:00",
-    messages: [
-      {
-        id: "m-13",
-        role: "user",
-        content: "What is our 2027 revenue target?",
-        created_at: "2026-09-22T17:30:00",
-      },
-      {
-        id: "m-14",
-        role: "assistant",
-        created_at: "2026-09-22T17:30:00",
-        feedback: null,
-        ...NOT_COVERED,
-      },
-    ],
-  },
-];
+type StreamState = {
+  id: string;
+  convId: string;
+  created_at: string;
+  question: string;
+  text: string;
+};
 
 const BORDER = "#D8DEDA";
 const INK = "#16211D";
@@ -446,15 +73,7 @@ const BTN =
   "inline-flex items-center justify-center gap-2 rounded-[0.5rem] text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 " +
   RING;
 
-function buildAnswer(question) {
-  const q = question.toLowerCase();
-  for (const m of MATCHERS) {
-    if (m.keys.some((k) => q.includes(k))) return m.answer;
-  }
-  return NOT_COVERED;
-}
-
-function titleFrom(question) {
+function titleFrom(question: string): string {
   const clean = question
     .replace(/\s+/g, " ")
     .trim()
@@ -462,15 +81,15 @@ function titleFrom(question) {
   return clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean;
 }
 
-function fmtTime(iso) {
+function fmtTime(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
-function fmtDay(iso) {
+function fmtDay(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
-  const same = (a, b) =>
+  const same = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
@@ -482,48 +101,31 @@ function fmtDay(iso) {
 
 export default function Screen() {
   const navigate = useNavigate();
-  const [conversations, setConversations] = React.useState(SEED_CONVERSATIONS);
-  const [activeId, setActiveId] = React.useState("c-1");
+  const { signOut } = useAuth();
+  const [conversations, setConversations] = React.useState<Conversation[]>([]);
+  const [activeId, setActiveId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState("");
   const [historyQuery, setHistoryQuery] = React.useState("");
-  const [stream, setStream] = React.useState(null);
-  const [openSource, setOpenSource] = React.useState({
-    citation: ANSWERS.expenses.citations[0],
-    index: 1,
-  });
-  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [stream, setStream] = React.useState<StreamState | null>(null);
+  const [openSource, setOpenSource] = React.useState<Citation | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<Conversation | null>(null);
   const [announce, setAnnounce] = React.useState("");
 
-  const seq = React.useRef(200);
-  const uid = (p) => {
+  const seq = React.useRef(0);
+  const uid = (p: string) => {
     seq.current += 1;
     return p + "-" + seq.current;
   };
 
-  const transcriptRef = React.useRef(null);
-  const sourceHeadingRef = React.useRef(null);
-  const cancelRef = React.useRef(null);
-  const dialogRef = React.useRef(null);
-  const composerRef = React.useRef(null);
+  const transcriptRef = React.useRef<HTMLDivElement | null>(null);
+  const sourceHeadingRef = React.useRef<HTMLHeadingElement | null>(null);
+  const cancelRef = React.useRef<HTMLButtonElement | null>(null);
+  const dialogRef = React.useRef<HTMLDivElement | null>(null);
+  const composerRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const streamHandleRef = React.useRef<StreamAnswerHandle | null>(null);
 
   const activeConv = conversations.find((c) => c.id === activeId) || null;
   const isStreaming = stream !== null;
-
-  // Stream the answer token by token.
-  React.useEffect(() => {
-    if (!stream) return undefined;
-    if (stream.shown >= stream.tokens.length) {
-      commitStream(stream, false);
-      return undefined;
-    }
-    const delay = stream.shown === 0 ? 420 : 26;
-    const t = setTimeout(() => {
-      setStream((s) =>
-        s && s.id === stream.id ? { ...s, shown: Math.min(s.shown + 2, s.tokens.length) } : s,
-      );
-    }, delay);
-    return () => clearTimeout(t);
-  }, [stream]);
 
   React.useEffect(() => {
     const el = transcriptRef.current;
@@ -534,15 +136,15 @@ export default function Screen() {
   React.useEffect(() => {
     if (!deleteTarget) return undefined;
     if (cancelRef.current) cancelRef.current.focus();
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         setDeleteTarget(null);
       } else if (e.key === "Tab" && dialogRef.current) {
         const nodes = dialogRef.current.querySelectorAll("button");
         if (!nodes.length) return;
-        const first = nodes[0];
-        const last = nodes[nodes.length - 1];
+        const first = nodes[0] as HTMLElement;
+        const last = nodes[nodes.length - 1] as HTMLElement;
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
@@ -556,43 +158,64 @@ export default function Screen() {
     return () => document.removeEventListener("keydown", onKey);
   }, [deleteTarget]);
 
-  function commitStream(s, stopped) {
-    const text = stopped ? s.tokens.slice(0, s.shown).join("").trimEnd() + " …" : s.answer.text;
-    const msg = {
+  function appendAssistantMessage(convId: string, msg: AssistantMessage | ErrorMessage) {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, msg] } : c)),
+    );
+  }
+
+  function finishStream(result: AnswerTerminal, s: StreamState) {
+    const msg: AssistantMessage = {
       id: s.id,
       role: "assistant",
-      content: text,
+      content: s.text,
       created_at: s.created_at,
-      citations: stopped ? [] : s.answer.citations,
-      not_covered: stopped ? false : s.answer.not_covered,
-      partial: stopped ? false : s.answer.partial,
-      stopped: stopped,
-      token_usage: stopped ? Math.max(40, s.shown * 3) : s.answer.token_usage,
+      citations: dedupeCitations(result.citations),
+      not_covered: result.not_covered,
+      partial: result.partial,
+      stopped: false,
+      token_usage: result.token_usage,
       feedback: null,
     };
-    setConversations((prev) =>
-      prev.map((c) => (c.id === s.convId ? { ...c, messages: [...c.messages, msg] } : c)),
-    );
+    appendAssistantMessage(s.convId, msg);
     setStream(null);
-    if (stopped) {
-      setAnnounce("Generation stopped.");
-    } else if (msg.not_covered) {
+    streamHandleRef.current = null;
+    if (msg.not_covered) {
       setAnnounce("Answer complete. Not covered by the knowledge base, no citations.");
     } else {
       setAnnounce("Answer complete with " + msg.citations.length + " source(s).");
-      if (msg.citations.length) setOpenSource({ citation: msg.citations[0], index: 1 });
+      if (msg.citations.length) setOpenSource(msg.citations[0]);
     }
   }
 
-  function ask(question) {
+  function failStream(message: string, s: StreamState) {
+    const msg: ErrorMessage = {
+      id: s.id,
+      role: "error",
+      content: message,
+      created_at: s.created_at,
+      question: s.question,
+    };
+    appendAssistantMessage(s.convId, msg);
+    setStream(null);
+    streamHandleRef.current = null;
+    setAnnounce("The answer failed: " + message);
+  }
+
+  function ask(question: string) {
     const q = question.replace(/\s+/g, " ").trim();
     if (!q || isStreaming) return;
     const nowIso = new Date().toISOString();
-    const userMsg = { id: uid("m"), role: "user", content: q, created_at: nowIso };
+    const userMsg: UserMessage = { id: uid("m"), role: "user", content: q, created_at: nowIso };
     let convId = activeId;
     if (!convId) {
       convId = uid("c");
-      const conv = { id: convId, title: titleFrom(q), created_at: nowIso, messages: [userMsg] };
+      const conv: Conversation = {
+        id: convId,
+        title: titleFrom(q),
+        created_at: nowIso,
+        messages: [userMsg],
+      };
       setConversations((prev) => [conv, ...prev]);
       setActiveId(convId);
     } else {
@@ -600,17 +223,65 @@ export default function Screen() {
         prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, userMsg] } : c)),
       );
     }
-    const answer = buildAnswer(q);
-    setStream({
-      id: uid("m"),
-      convId,
-      created_at: nowIso,
-      answer,
-      tokens: answer.text.split(/(\s+)/),
-      shown: 0,
-    });
     setDraft("");
     setAnnounce("Searching the knowledge base. Generating answer.");
+
+    const streamId = uid("m");
+    const convIdForStream = convId;
+    const newStream: StreamState = {
+      id: streamId,
+      convId: convIdForStream,
+      created_at: nowIso,
+      question: q,
+      text: "",
+    };
+    setStream(newStream);
+
+    const handle = streamAnswer(
+      { question: q, conversationId: null },
+      {
+        onToken: (token) => {
+          setStream((s) => (s && s.id === streamId ? { ...s, text: s.text + token } : s));
+        },
+        onDone: (result) => {
+          setStream((s) => {
+            if (s && s.id === streamId) finishStream(result, s);
+            return s;
+          });
+        },
+        onError: (message) => {
+          setStream((s) => {
+            if (s && s.id === streamId) failStream(message, s);
+            return s;
+          });
+        },
+      },
+    );
+    streamHandleRef.current = handle;
+  }
+
+  async function stopGenerating() {
+    const handle = streamHandleRef.current;
+    setStream((s) => {
+      if (!s) return s;
+      const msg: AssistantMessage = {
+        id: s.id,
+        role: "assistant",
+        content: s.text.trimEnd() || "(Generation was stopped before any text arrived.)",
+        created_at: s.created_at,
+        citations: [],
+        not_covered: false,
+        partial: false,
+        stopped: true,
+        token_usage: null,
+        feedback: null,
+      };
+      appendAssistantMessage(s.convId, msg);
+      setAnnounce("Generation stopped. The partial answer has been saved.");
+      return null;
+    });
+    streamHandleRef.current = null;
+    if (handle) await handle.stop();
   }
 
   function startNewConversation() {
@@ -630,62 +301,31 @@ export default function Screen() {
     setAnnounce("Conversation “" + target.title + "” deleted from your history.");
   }
 
-  function openCitation(citation, index) {
-    setOpenSource({ citation, index });
-    if (sourceHeadingRef.current) sourceHeadingRef.current.focus();
-  }
-
   const filteredHistory = conversations.filter((c) =>
     c.title.toLowerCase().includes(historyQuery.trim().toLowerCase()),
   );
 
-  const streamText = stream ? stream.tokens.slice(0, stream.shown).join("") : "";
-
-  function renderBody(text, citations, msgKey) {
+  function renderBody(text: string, key: string) {
     return text.split("\n\n").map((para, pi) => (
-      <p key={msgKey + "-p" + pi} className="mb-3 last:mb-0 leading-7" style={{ color: BODY_INK }}>
-        {para.split(/(\[\d+\])/g).map((part, si) => {
-          const m = part.match(/^\[(\d+)\]$/);
-          if (!m) return <React.Fragment key={si}>{part}</React.Fragment>;
-          const n = parseInt(m[1], 10);
-          const cit = citations && citations[n - 1];
-          if (!cit) return <React.Fragment key={si}>{part}</React.Fragment>;
-          const doc = DOCS[cit.document_id];
-          const active =
-            openSource &&
-            openSource.citation &&
-            openSource.citation.document_id === cit.document_id &&
-            openSource.citation.chunk_index === cit.chunk_index;
-          return (
-            <button
-              key={si}
-              type="button"
-              onClick={() => openCitation(cit, n)}
-              aria-label={"Show source " + n + ": " + doc.filename}
-              className={
-                "mx-0.5 inline-flex -translate-y-0.5 items-center rounded px-1 py-0.5 align-baseline text-[0.68rem] font-semibold hover:underline " +
-                RING
-              }
-              style={{
-                color: brand.primaryColor,
-                backgroundColor: active ? "#C9DCD4" : "#E4EDE9",
-                border: "1px solid " + (active ? brand.primaryColor : "#CBDBD4"),
-              }}
-            >
-              {n}
-            </button>
-          );
-        })}
+      <p key={key + "-p" + pi} className="mb-3 last:mb-0 leading-7" style={{ color: BODY_INK }}>
+        {para}
       </p>
     ));
   }
 
-  function AssistantMeta({ msg }) {
+  function AssistantMeta({ msg }: { msg: AssistantMessage }) {
     return (
       <p className="mt-4 text-xs" style={{ color: brand.neutralColor }}>
         Generated in the company Azure tenant
-        <span aria-hidden="true"> · </span>
-        {msg.token_usage.toLocaleString("en-GB")} tokens
+        {msg.token_usage && (
+          <>
+            <span aria-hidden="true"> · </span>
+            {(msg.token_usage.prompt_tokens + msg.token_usage.completion_tokens).toLocaleString(
+              "en-GB",
+            )}{" "}
+            tokens
+          </>
+        )}
         <span aria-hidden="true"> · </span>
         {msg.not_covered
           ? "no sources"
@@ -694,8 +334,8 @@ export default function Screen() {
     );
   }
 
-  function Feedback({ convId, msg }) {
-    const set = (rating) => {
+  function Feedback({ convId, msg }: { convId: string; msg: AssistantMessage }) {
+    const set = (rating: "up" | "down") => {
       setConversations((prev) =>
         prev.map((c) =>
           c.id !== convId
@@ -703,7 +343,9 @@ export default function Screen() {
             : {
                 ...c,
                 messages: c.messages.map((m) =>
-                  m.id === msg.id ? { ...m, feedback: m.feedback === rating ? null : rating } : m,
+                  m.id === msg.id && m.role === "assistant"
+                    ? { ...m, feedback: m.feedback === rating ? null : rating }
+                    : m,
                 ),
               },
         ),
@@ -746,8 +388,6 @@ export default function Screen() {
     );
   }
 
-  const openDoc = openSource && openSource.citation ? DOCS[openSource.citation.document_id] : null;
-
   return (
     <div style={{ fontFamily: brand.fontBody, color: BODY_INK }}>
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -760,8 +400,8 @@ export default function Screen() {
           </h1>
           <p className="mt-2 text-sm leading-6" style={{ color: brand.neutralColor }}>
             Answers are built only from documents in the shared knowledge base. Every claim carries
-            a citation you can open beside the answer — and when nothing supports your question, the
-            assistant says so instead of guessing.
+            a citation you can open beside the answer — and when nothing supports your question,
+            the assistant says so instead of guessing.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -786,7 +426,7 @@ export default function Screen() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("sign-in")}
+            onClick={() => void signOut()}
             className={BTN + " border bg-white px-4 py-2 hover:bg-[#E9EDEA]"}
             style={{ borderColor: BORDER, color: BODY_INK }}
           >
@@ -972,7 +612,7 @@ export default function Screen() {
                   style={{ color: brand.neutralColor }}
                 >
                   Answers come only from documents uploaded to the shared company knowledge base,
-                  and each one is cited so you can read the original passage. If nothing covers your
+                  and each one is cited so you can read the original source. If nothing covers your
                   question, you will be told rather than guessed at.
                 </p>
                 <p className="mt-3 text-sm">
@@ -1012,25 +652,77 @@ export default function Screen() {
               </div>
             ) : (
               <ol role="list" className="space-y-6">
-                {activeConv.messages.map((msg) =>
-                  msg.role === "user" ? (
-                    <li key={msg.id}>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-semibold" style={{ color: INK }}>
-                          You
-                        </span>
-                        <span className="text-xs" style={{ color: brand.neutralColor }}>
-                          {fmtTime(msg.created_at)}
-                        </span>
-                      </div>
-                      <div
-                        className="mt-1.5 rounded-[0.5rem] border px-4 py-3 text-sm leading-6"
-                        style={{ borderColor: BORDER, backgroundColor: "#F1F3F1", color: BODY_INK }}
-                      >
-                        {msg.content}
-                      </div>
-                    </li>
-                  ) : (
+                {activeConv.messages.map((msg) => {
+                  if (msg.role === "user") {
+                    return (
+                      <li key={msg.id}>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs font-semibold" style={{ color: INK }}>
+                            You
+                          </span>
+                          <span className="text-xs" style={{ color: brand.neutralColor }}>
+                            {fmtTime(msg.created_at)}
+                          </span>
+                        </div>
+                        <div
+                          className="mt-1.5 rounded-[0.5rem] border px-4 py-3 text-sm leading-6"
+                          style={{
+                            borderColor: BORDER,
+                            backgroundColor: "#F1F3F1",
+                            color: BODY_INK,
+                          }}
+                        >
+                          {msg.content}
+                        </div>
+                      </li>
+                    );
+                  }
+
+                  if (msg.role === "error") {
+                    return (
+                      <li key={msg.id}>
+                        <div className="flex items-baseline gap-2">
+                          <span
+                            className="text-xs font-semibold"
+                            style={{ color: brand.accentColor }}
+                          >
+                            Assistant
+                          </span>
+                          <span className="text-xs" style={{ color: brand.neutralColor }}>
+                            {fmtTime(msg.created_at)}
+                          </span>
+                        </div>
+                        <div
+                          role="alert"
+                          className="mt-1.5 rounded-[0.5rem] border border-l-2 px-4 py-4 text-sm"
+                          style={{
+                            borderColor: BORDER,
+                            borderLeftColor: brand.accentColor,
+                            backgroundColor: "#F6E9EA",
+                          }}
+                        >
+                          <p
+                            className="flex items-center gap-2 font-medium"
+                            style={{ color: brand.accentColor }}
+                          >
+                            <Icons.AlertCircle className="h-4 w-4" aria-hidden="true" />
+                            {msg.content}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => ask(msg.question)}
+                            disabled={isStreaming}
+                            className={BTN + " mt-3 border bg-white px-3 py-1.5 text-xs"}
+                            style={{ borderColor: brand.accentColor, color: brand.accentColor }}
+                          >
+                            Retry this question
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  }
+
+                  return (
                     <li key={msg.id}>
                       <div className="flex items-baseline gap-2">
                         <span
@@ -1084,9 +776,9 @@ export default function Screen() {
                           borderLeftColor: msg.not_covered ? brand.accentColor : brand.primaryColor,
                         }}
                       >
-                        {renderBody(msg.content, msg.citations, msg.id)}
+                        {renderBody(msg.content, msg.id)}
 
-                        {msg.citations && msg.citations.length > 0 && (
+                        {msg.citations.length > 0 && (
                           <div className="mt-4 border-t pt-3" style={{ borderColor: BORDER }}>
                             <h4
                               className="text-xs font-semibold uppercase tracking-wide"
@@ -1095,53 +787,53 @@ export default function Screen() {
                               Sources
                             </h4>
                             <ul role="list" className="mt-2 space-y-1.5">
-                              {msg.citations.map((cit, i) => {
-                                const doc = DOCS[cit.document_id];
-                                return (
-                                  <li key={msg.id + "-cit" + i}>
-                                    <button
-                                      type="button"
-                                      onClick={() => openCitation(cit, i + 1)}
-                                      className={
-                                        "flex w-full items-center gap-2 rounded-[0.5rem] border px-3 py-2 text-left text-sm hover:bg-[#F1F3F1] " +
-                                        RING
-                                      }
-                                      style={{ borderColor: BORDER }}
+                              {msg.citations.map((cit, i) => (
+                                <li key={msg.id + "-cit" + i}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenSource(cit);
+                                      if (sourceHeadingRef.current)
+                                        sourceHeadingRef.current.focus();
+                                    }}
+                                    className={
+                                      "flex w-full items-center gap-2 rounded-[0.5rem] border px-3 py-2 text-left text-sm hover:bg-[#F1F3F1] " +
+                                      RING
+                                    }
+                                    style={{ borderColor: BORDER }}
+                                  >
+                                    <span
+                                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[0.68rem] font-semibold"
+                                      style={{
+                                        backgroundColor: "#E4EDE9",
+                                        color: brand.primaryColor,
+                                      }}
+                                      aria-hidden="true"
                                     >
+                                      {i + 1}
+                                    </span>
+                                    <span className="min-w-0 flex-1">
                                       <span
-                                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[0.68rem] font-semibold"
-                                        style={{
-                                          backgroundColor: "#E4EDE9",
-                                          color: brand.primaryColor,
-                                        }}
-                                        aria-hidden="true"
+                                        className="block truncate font-medium"
+                                        style={{ color: INK }}
                                       >
-                                        {i + 1}
+                                        {cit.source_id}
                                       </span>
-                                      <span className="min-w-0 flex-1">
-                                        <span
-                                          className="block truncate font-medium"
-                                          style={{ color: INK }}
-                                        >
-                                          {doc.filename}
-                                        </span>
-                                        <span
-                                          className="block text-xs"
-                                          style={{ color: brand.neutralColor }}
-                                        >
-                                          {doc.source_type} · {doc.format} · passage{" "}
-                                          {cit.chunk_index}
-                                        </span>
-                                      </span>
-                                      <Icons.ChevronRight
-                                        className="h-4 w-4 shrink-0"
-                                        aria-hidden="true"
+                                      <span
+                                        className="block text-xs"
                                         style={{ color: brand.neutralColor }}
-                                      />
-                                    </button>
-                                  </li>
-                                );
-                              })}
+                                      >
+                                        {cit.source_type}
+                                      </span>
+                                    </span>
+                                    <Icons.ChevronRight
+                                      className="h-4 w-4 shrink-0"
+                                      aria-hidden="true"
+                                      style={{ color: brand.neutralColor }}
+                                    />
+                                  </button>
+                                </li>
+                              ))}
                             </ul>
                           </div>
                         )}
@@ -1169,8 +861,8 @@ export default function Screen() {
                         {!msg.stopped && <Feedback convId={activeConv.id} msg={msg} />}
                       </div>
                     </li>
-                  ),
-                )}
+                  );
+                })}
 
                 {stream && stream.convId === activeConv.id && (
                   <li>
@@ -1179,20 +871,20 @@ export default function Screen() {
                         Assistant
                       </span>
                       <span className="text-xs" style={{ color: brand.neutralColor }}>
-                        {stream.shown === 0 ? "searching the knowledge base…" : "streaming…"}
+                        {stream.text.length === 0 ? "searching the knowledge base…" : "streaming…"}
                       </span>
                     </div>
                     <div
                       className="mt-1.5 rounded-[0.5rem] border border-l-2 px-4 py-4 text-sm"
                       style={{ borderColor: BORDER, borderLeftColor: brand.primaryColor }}
                     >
-                      {stream.shown === 0 ? (
+                      {stream.text.length === 0 ? (
                         <p className="text-sm" style={{ color: brand.neutralColor }}>
                           Running hybrid keyword and meaning-based retrieval across the combined
                           index…
                         </p>
                       ) : (
-                        renderBody(streamText, stream.answer.citations, stream.id)
+                        renderBody(stream.text, stream.id)
                       )}
                       <span
                         className="mt-2 inline-block h-4 w-2 animate-pulse align-middle"
@@ -1259,7 +951,7 @@ export default function Screen() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => commitStream(stream, true)}
+                        onClick={() => void stopGenerating()}
                         className={BTN + " border bg-white px-3 py-2 hover:bg-[#F6E9EA]"}
                         style={{ borderColor: brand.accentColor, color: brand.accentColor }}
                       >
@@ -1304,13 +996,13 @@ export default function Screen() {
                 Source
               </h2>
               <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
-                {openDoc ? "Citation " + openSource.index + " · passage in place" : "Nothing open"}
+                {openSource ? "Citation selected" : "Nothing open"}
               </p>
             </div>
-            {openDoc && (
+            {openSource && (
               <button
                 type="button"
-                onClick={() => setOpenSource({ citation: null, index: 0 })}
+                onClick={() => setOpenSource(null)}
                 aria-label="Close source panel"
                 className={"rounded-[0.5rem] p-1.5 hover:bg-[#F1F3F1] " + RING}
                 style={{ color: brand.neutralColor }}
@@ -1320,7 +1012,7 @@ export default function Screen() {
             )}
           </div>
 
-          {!openDoc ? (
+          {!openSource ? (
             <div className="px-5 py-10 text-center">
               <Icons.FileText
                 className="mx-auto h-6 w-6"
@@ -1331,95 +1023,57 @@ export default function Screen() {
                 No source open
               </p>
               <p className="mt-1 text-xs leading-5" style={{ color: brand.neutralColor }}>
-                Select a citation number in an answer and the exact passage it came from opens here,
-                beside the answer.
+                Select a source in an answer and its details open here, beside the answer.
               </p>
             </div>
           ) : (
             <div className="px-4 py-4">
               <h3 className="break-words text-sm font-semibold leading-5" style={{ color: INK }}>
-                {openDoc.filename}
+                {openSource.source_id}
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 <span
                   className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.7rem] font-medium"
                   style={{ borderColor: BORDER, color: BODY_INK }}
                 >
-                  {openDoc.source_type}
-                </span>
-                <span
-                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.7rem] font-medium"
-                  style={{ borderColor: BORDER, color: BODY_INK }}
-                >
-                  {openDoc.format}
-                </span>
-                <span
-                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.7rem] font-semibold"
-                  style={{
-                    borderColor: brand.primaryColor,
-                    color: brand.primaryColor,
-                    backgroundColor: "#E4EDE9",
-                  }}
-                >
-                  <Icons.Check className="h-3 w-3" aria-hidden="true" />
-                  {openDoc.status}
+                  {openSource.source_type}
                 </span>
               </div>
 
-              <dl className="mt-4 space-y-2 text-xs">
-                <div className="flex justify-between gap-3">
-                  <dt style={{ color: brand.neutralColor }}>Uploaded by</dt>
-                  <dd className="text-right font-medium" style={{ color: BODY_INK }}>
-                    {openDoc.uploader}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt style={{ color: brand.neutralColor }}>Uploaded</dt>
-                  <dd className="text-right font-medium" style={{ color: BODY_INK }}>
-                    {new Date(openDoc.uploaded_at).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt style={{ color: brand.neutralColor }}>Source ID</dt>
-                  <dd className="text-right font-medium" style={{ color: BODY_INK }}>
-                    {openDoc.source_id}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt style={{ color: brand.neutralColor }}>Passage</dt>
-                  <dd className="text-right font-medium" style={{ color: BODY_INK }}>
-                    Chunk {openSource.citation.chunk_index}
-                  </dd>
-                </div>
-              </dl>
-
-              <h4
-                className="mt-5 text-xs font-semibold uppercase tracking-wide"
-                style={{ color: INK }}
-              >
-                Cited passage
-              </h4>
-              <blockquote
-                className="mt-2 border-l-2 py-1 pl-3 text-sm leading-6"
-                style={{ borderColor: brand.primaryColor, color: BODY_INK }}
-              >
-                {openSource.citation.quote}
-              </blockquote>
+              {openSource.snippet && (
+                <>
+                  <h4
+                    className="mt-5 text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: INK }}
+                  >
+                    Cited passage
+                  </h4>
+                  <blockquote
+                    className="mt-2 border-l-2 py-1 pl-3 text-sm leading-6"
+                    style={{ borderColor: brand.primaryColor, color: BODY_INK }}
+                  >
+                    {openSource.snippet}
+                  </blockquote>
+                </>
+              )}
 
               <div className="mt-5 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => navigate("documents")}
-                  className={BTN + " w-full px-4 py-2 text-white hover:opacity-90"}
-                  style={{ backgroundColor: brand.primaryColor }}
-                >
-                  <Icons.Download className="h-4 w-4" aria-hidden="true" />
-                  Open original file
-                </button>
+                {openSource.source_url ? (
+                  <a
+                    href={openSource.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={BTN + " w-full px-4 py-2 text-white hover:opacity-90"}
+                    style={{ backgroundColor: brand.primaryColor }}
+                  >
+                    <Icons.Download className="h-4 w-4" aria-hidden="true" />
+                    Open original source
+                  </a>
+                ) : (
+                  <p className="text-xs" style={{ color: brand.neutralColor }}>
+                    No source link was returned for this citation.
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => navigate("documents")}

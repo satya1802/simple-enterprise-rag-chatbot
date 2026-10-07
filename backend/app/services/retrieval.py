@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from app.config import RETRIEVAL_RELEVANCE_THRESHOLD
 from app.database import engine
 from app.models import Chunk, Document
 from app.services.providers import get_provider
@@ -38,11 +39,19 @@ _RRF_K = 60
 
 @dataclass
 class ScoredChunk:
-    """One merged candidate: the chunk, its document, and its fused score."""
+    """One merged candidate: the chunk, its document, its fused rank score,
+    and `relevance` -- a 0..1 confidence used to gate and grade the match
+    (AC-100/AC-101). `relevance` is cosine similarity against the query
+    embedding when the chunk has one; otherwise it falls back to the fused
+    rank score normalised against the strongest candidate in this result
+    set, so a keyword-only match still degrades gracefully instead of
+    always failing the threshold.
+    """
 
     chunk: Chunk
     document: Document
     score: float
+    relevance: float
 
 
 def _is_postgres() -> bool:
@@ -83,19 +92,13 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-def _vector_candidates(db: Session, question: str, limit: int) -> list[Chunk]:
+def _vector_candidates(db: Session, query_vector: list[float], limit: int) -> list[Chunk]:
     """One combined-index vector search: pgvector distance, or an in-Python
     cosine-similarity fallback when pgvector's operators aren't available.
 
     Runs against every row in `chunks` regardless of `source_type`, same as
     `_keyword_candidates`.
     """
-    provider = get_provider()
-    try:
-        [query_vector] = provider.embed([question])
-    except Exception:  # noqa: BLE001 -- an unconfigured/unreachable provider
-        # must not crash retrieval; it degrades to keyword-only candidates.
-        return []
     if not query_vector:
         return []
 
@@ -113,15 +116,31 @@ def _vector_candidates(db: Session, question: str, limit: int) -> list[Chunk]:
     return candidates[:limit]
 
 
-def search_chunks(db: Session, question: str, limit: int = 8) -> list[ScoredChunk]:
+def search_chunks(
+    db: Session,
+    question: str,
+    limit: int = 8,
+    relevance_threshold: float = RETRIEVAL_RELEVANCE_THRESHOLD,
+) -> list[ScoredChunk]:
     """Hybrid retrieval: keyword + vector, merged via reciprocal rank fusion.
 
     Both candidate sets are always computed; the merged ranking is what the
-    answer router grounds generation in. An empty return means the merged
-    candidate set supports no answer.
+    answer router grounds generation in. Candidates scoring below
+    `relevance_threshold` (config-driven; see app.config) are discarded
+    before being returned, so a caller that finds no surviving candidate
+    knows the corpus does not support an answer, rather than being handed a
+    weak match (AC-100). An empty return means the merged candidate set
+    supports no answer.
     """
     keyword_chunks = _keyword_candidates(db, question, limit)
-    vector_chunks = _vector_candidates(db, question, limit)
+
+    provider = get_provider()
+    try:
+        [query_vector] = provider.embed([question])
+    except Exception:  # noqa: BLE001 -- an unconfigured/unreachable provider
+        # must not crash retrieval; it degrades to keyword-only candidates.
+        query_vector = []
+    vector_chunks = _vector_candidates(db, query_vector, limit)
 
     fused_scores: dict = {}
     chunks_by_id: dict = {}
@@ -130,6 +149,10 @@ def search_chunks(db: Session, question: str, limit: int = 8) -> list[ScoredChun
             fused_scores[chunk.id] = fused_scores.get(chunk.id, 0.0) + 1.0 / (_RRF_K + rank + 1)
             chunks_by_id[chunk.id] = chunk
 
+    if not fused_scores:
+        return []
+
+    max_fused_score = max(fused_scores.values())
     ranked_ids = sorted(fused_scores, key=lambda cid: fused_scores[cid], reverse=True)
 
     results: list[ScoredChunk] = []
@@ -139,5 +162,18 @@ def search_chunks(db: Session, question: str, limit: int = 8) -> list[ScoredChun
         if document is None:
             # Document deleted between the query and here: never citable.
             continue
-        results.append(ScoredChunk(chunk=chunk, document=document, score=fused_scores[chunk_id]))
+
+        if chunk.embedding is not None and query_vector:
+            relevance = _cosine_similarity(list(chunk.embedding), query_vector)
+        else:
+            relevance = fused_scores[chunk_id] / max_fused_score if max_fused_score else 0.0
+
+        if relevance < relevance_threshold:
+            continue
+
+        results.append(
+            ScoredChunk(
+                chunk=chunk, document=document, score=fused_scores[chunk_id], relevance=relevance
+            )
+        )
     return results

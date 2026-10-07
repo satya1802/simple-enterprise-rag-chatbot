@@ -88,6 +88,10 @@ class Message(Base):
     content: Mapped[str] = mapped_column(Text)
     not_covered: Mapped[bool] = mapped_column(default=False)
     token_usage: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Set when a client called POST /answer/stop mid-generation: the
+    # persisted content is the partial text generated up to that point,
+    # never presented as a complete answer (AC-092).
+    stopped: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
@@ -100,6 +104,8 @@ class Citation(Base):
     source_type: Mapped[str] = mapped_column(Text)
     source_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Dedup key for display when needed; not enforced at the DB layer since
+    # one message legitimately has multiple distinct-document citations.
 
 
 class Feedback(Base):

@@ -11,6 +11,7 @@ one, in-tenant, allowlisted host.
 """
 
 import json
+from collections.abc import Iterator
 from urllib.parse import urlparse
 
 import boto3
@@ -22,7 +23,7 @@ from app.config import (
     BEDROCK_ENDPOINT_URL,
     MODEL_PROVIDER_ALLOWED_HOSTS,
 )
-from app.services.providers.base import ChatResult, ModelProvider
+from app.services.providers.base import ChatResult, ModelProvider, StreamChunk
 
 
 def _is_allowlisted_host(host: str, region: str, extra_allowed: set[str]) -> bool:
@@ -46,6 +47,27 @@ def _extract_chat_text(payload: dict) -> str:
         if isinstance(first, dict) and "text" in first:
             return str(first["text"])
     return str(payload.get("completion", ""))
+
+
+def _extract_stream_delta(payload: dict) -> str:
+    """One incremental text delta out of one Bedrock response-stream event.
+
+    Matches the same two payload shapes `_extract_chat_text` tolerates
+    (Anthropic-style `delta.text` content blocks, and the plain
+    `completion` field some models use), just applied per-event instead of
+    to one final payload.
+    """
+    delta = payload.get("delta")
+    if isinstance(delta, dict) and "text" in delta:
+        return str(delta["text"])
+    content = payload.get("content")
+    if isinstance(content, list) and content:
+        first = content[0]
+        if isinstance(first, dict) and "text" in first:
+            return str(first["text"])
+    if "completion" in payload:
+        return str(payload.get("completion", ""))
+    return ""
 
 
 class BedrockProvider(ModelProvider):
@@ -91,6 +113,38 @@ class BedrockProvider(ModelProvider):
             prompt_tokens=int(usage.get("input_tokens", 0)),
             completion_tokens=int(usage.get("output_tokens", 0)),
         )
+
+    def stream_chat(self, messages: list[dict[str, str]]) -> Iterator[StreamChunk]:
+        if not self._chat_model_id:
+            raise RuntimeError("BEDROCK_CHAT_MODEL_ID is not configured")
+        body = json.dumps(
+            {
+                "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
+                "max_tokens": 1024,
+            }
+        )
+        response = self._client.invoke_model_with_response_stream(
+            modelId=self._chat_model_id, body=body
+        )
+
+        prompt_tokens = 0
+        completion_tokens = 0
+        for event in response["body"]:
+            chunk = event.get("chunk")
+            if not chunk:
+                continue
+            payload = json.loads(chunk["bytes"])
+
+            usage = payload.get("usage")
+            if usage:
+                prompt_tokens = int(usage.get("input_tokens", prompt_tokens))
+                completion_tokens = int(usage.get("output_tokens", completion_tokens))
+
+            delta = _extract_stream_delta(payload)
+            if delta:
+                yield StreamChunk(delta=delta)
+
+        yield StreamChunk(done=True, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not self._embedding_model_id:

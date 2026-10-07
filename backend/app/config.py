@@ -52,3 +52,16 @@ BEDROCK_ENDPOINT_URL = os.getenv("BEDROCK_ENDPOINT_URL", "")
 # Comma-separated extra hostnames the adapter may initialise against, for a
 # private endpoint whose hostname does not match the standard AWS shapes.
 MODEL_PROVIDER_ALLOWED_HOSTS = os.getenv("MODEL_PROVIDER_ALLOWED_HOSTS", "")
+
+# answer_engine: retrieval relevance gating (AC-100/AC-101). A candidate
+# chunk scoring below RETRIEVAL_RELEVANCE_THRESHOLD is discarded outright
+# before generation; if nothing clears it, /answer returns the not-covered
+# response instead of grounding on a weak match. When the best surviving
+# candidate still scores below RETRIEVAL_PARTIAL_CONFIDENCE_THRESHOLD, the
+# question is treated as only partially supported by the corpus and the
+# terminal SSE event's `partial` flag is set. Both are configuration, not a
+# literal in app.routers.answer or app.services.retrieval.
+RETRIEVAL_RELEVANCE_THRESHOLD = float(os.getenv("RETRIEVAL_RELEVANCE_THRESHOLD", "0.25"))
+RETRIEVAL_PARTIAL_CONFIDENCE_THRESHOLD = float(
+    os.getenv("RETRIEVAL_PARTIAL_CONFIDENCE_THRESHOLD", "0.45")
+)

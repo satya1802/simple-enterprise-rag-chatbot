@@ -17,9 +17,9 @@ the API contract, schemas and stored document records do not change
 from functools import lru_cache
 
 from app.config import MODEL_PROVIDER
-from app.services.providers.base import ChatResult, ModelProvider
+from app.services.providers.base import ChatResult, ModelProvider, StreamChunk
 
-__all__ = ["ChatResult", "ModelProvider", "get_provider"]
+__all__ = ["ChatResult", "ModelProvider", "StreamChunk", "get_provider"]
 
 
 @lru_cache(maxsize=1)

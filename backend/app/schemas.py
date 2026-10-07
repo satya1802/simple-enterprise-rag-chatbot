@@ -92,6 +92,7 @@ class DocumentUploadResponse(BaseModel):
 class CitationOut(BaseModel):
     document_id: str
     source_type: str
+    source_id: str | None = None
     source_url: str | None = None
 
 
@@ -141,11 +142,20 @@ class TokenUsage(BaseModel):
 
 
 class AnswerResult(BaseModel):
-    """The structured payload that follows the streamed tokens on POST /answer."""
+    """The terminal SSE event's JSON payload on POST /answer.
 
+    `stream_id` is also carried on every preceding `token` event so a
+    client can correlate them and call POST /answer/stop. `partial` is set
+    when retrieval only partially supports the question (AC-101);
+    `time_to_first_token_ms` is the TTFT instrumentation from AC-091.
+    """
+
+    stream_id: str
     citations: list[CitationOut] = []
     not_covered: bool
+    partial: bool = False
     token_usage: TokenUsage
+    time_to_first_token_ms: float | None = None
 
 
 class StopRequest(BaseModel):

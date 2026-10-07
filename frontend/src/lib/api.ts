@@ -41,6 +41,17 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
   unauthorizedHandler = handler;
 }
 
+/**
+ * Lets callers that cannot use `apiFetch` (e.g. SSE streaming, which needs
+ * its own `fetch` call to read the response body incrementally) still
+ * route a 401 through the same shared handler (AC-069).
+ */
+export function reportUnauthorized(status: number): void {
+  if (status === 401) {
+    unauthorizedHandler?.();
+  }
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
