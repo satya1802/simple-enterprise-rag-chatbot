@@ -167,6 +167,25 @@ export default function Screen() {
   const returnFocusRef = React.useRef<HTMLElement | null>(null);
   const didMountRef = React.useRef(false);
 
+  // Polling support (AC-081): refs so the recursive timeout always reads the
+  // latest search/page without re-subscribing, a map of last-seen statuses
+  // to detect Ready/Failed transitions, and an in-flight guard so a slow
+  // response can never overlap the next tick.
+  const queryRef = React.useRef(query);
+  const pageRef = React.useRef(page);
+  const prevStatusesRef = React.useRef<Map<string, string>>(new Map());
+  const pollTimerRef = React.useRef<number | null>(null);
+  const pollInFlightRef = React.useRef(false);
+  const pollFailureCountRef = React.useRef(0);
+
+  React.useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
+
+  React.useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
   const handle401 = React.useCallback(
     async (err: unknown): Promise<boolean> => {
       if (err instanceof ApiError && err.status === 401) {
@@ -187,6 +206,7 @@ export default function Screen() {
         setDocuments(res.items);
         setTotal(res.total);
         setPage(targetPage);
+        prevStatusesRef.current = new Map(res.items.map((item) => [item.id, item.status]));
       } catch (err) {
         if (await handle401(err)) return;
         setLoadError(
@@ -212,6 +232,79 @@ export default function Screen() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
+
+  /* ---- polling (AC-081): refresh quietly while something is Processing ---- */
+  const pollTick = React.useCallback(async () => {
+    if (pollInFlightRef.current) return;
+    pollInFlightRef.current = true;
+    try {
+      const res = await listDocuments({
+        q: queryRef.current,
+        page: pageRef.current,
+        page_size: PAGE_SIZE,
+      });
+      pollFailureCountRef.current = 0;
+      const transitions: string[] = [];
+      res.items.forEach((item) => {
+        const prevStatus = prevStatusesRef.current.get(item.id);
+        if (
+          prevStatus &&
+          prevStatus !== item.status &&
+          (item.status === "Ready" || item.status === "Failed")
+        ) {
+          transitions.push(`${item.filename} is now ${item.status}.`);
+        }
+      });
+      prevStatusesRef.current = new Map(res.items.map((item) => [item.id, item.status]));
+      // Quiet update: documents/total only, never loading/loadError/page/query,
+      // so search text, filters and scroll position are untouched.
+      setDocuments(res.items);
+      setTotal(res.total);
+      if (transitions.length > 0) setLive(transitions.join(" "));
+    } catch (err) {
+      pollFailureCountRef.current += 1;
+      if (err instanceof ApiError && err.status === 401) {
+        await refresh();
+      }
+    } finally {
+      pollInFlightRef.current = false;
+    }
+  }, [refresh]);
+
+  const hasProcessing = documents.some(
+    (d) => (statusFilter === "all" || d.status === statusFilter) && d.status === "Processing",
+  );
+
+  React.useEffect(() => {
+    if (!hasProcessing) {
+      if (pollTimerRef.current) {
+        window.clearTimeout(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+      pollFailureCountRef.current = 0;
+      return undefined;
+    }
+    let cancelled = false;
+    const BASE_DELAY = 5000;
+    const MAX_DELAY = 60000;
+    const schedule = () => {
+      const delay = Math.min(BASE_DELAY * 2 ** pollFailureCountRef.current, MAX_DELAY);
+      pollTimerRef.current = window.setTimeout(() => {
+        if (cancelled) return;
+        void pollTick().then(() => {
+          if (!cancelled) schedule();
+        });
+      }, delay);
+    };
+    schedule();
+    return () => {
+      cancelled = true;
+      if (pollTimerRef.current) {
+        window.clearTimeout(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [hasProcessing, pollTick]);
 
   /* ---- delete dialog focus management ---- */
   React.useEffect(() => {
@@ -877,6 +970,14 @@ export default function Screen() {
                                 style={{ color: "#6B3036" }}
                               >
                                 {d.status_reason}
+                              </p>
+                            )}
+                            {(d.status === "Failed" || d.status === "No readable text") && (
+                              <p
+                                className="mt-2 max-w-sm text-xs leading-5"
+                                style={{ color: brand.neutralColor }}
+                              >
+                                Delete this document, then upload a different file to try again.
                               </p>
                             )}
                           </UI.TD>

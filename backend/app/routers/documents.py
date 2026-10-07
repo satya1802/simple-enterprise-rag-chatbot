@@ -11,13 +11,13 @@ freshly accepted document's status stays "Processing" here.
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.auth import SessionUser, get_current_user
 from app.config import MAX_UPLOAD_BYTES
 from app.database import get_db
-from app.models import Document, User
+from app.models import AuditLog, Chunk, Document, User
 from app.schemas import (
     DocumentListResponse,
     DocumentOut,
@@ -180,6 +180,42 @@ async def get_document_file(
 async def delete_document(
     document_id: str,
     user: Annotated[SessionUser, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> Response:
-    """Remove document, its S3 file and all chunks/embeddings; write audit entry."""
+    """Remove document, its S3 file and all chunks/embeddings; write audit entry.
+
+    No visibility/owner-scope check: any authenticated employee may delete
+    any document (AC per packet). The DB side -- chunk rows, the document
+    row and the audit entry -- commits as a single transaction so a
+    mid-transaction failure leaves no orphan chunks; the object-store
+    delete happens only after that commit succeeds, so a failure there
+    never leaves the DB and the stored object out of sync in a way that
+    orphans DB rows.
+    """
+    try:
+        doc_uuid = uuid.UUID(document_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        ) from exc
+
+    document = db.get(Document, doc_uuid)
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    s3_key = document.s3_key
+
+    db.query(Chunk).filter(Chunk.document_id == doc_uuid).delete()
+    db.add(
+        AuditLog(
+            actor_id=uuid.UUID(user.id),
+            action="document.delete",
+            document_id=doc_uuid,
+        )
+    )
+    db.delete(document)
+    db.commit()
+
+    delete_file(s3_key)
+
     return Response(status_code=204)
