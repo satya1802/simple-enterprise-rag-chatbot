@@ -10,6 +10,15 @@ A backend was also generated for this project (see `../backend/`), but these
 screens still run on **seeded sample data** -- wiring a given screen to a real
 endpoint is the next job, not something this repository pretends to have done.
 
+## Known limitation: English only
+
+Release one of this pilot supports English-only content and interface. Every
+label, message and system-generated string in the shipped screens is English,
+and the getting-started guide's "Limitations of release one" section states
+this explicitly, linked from the chat screen's "Getting started" button.
+Questions or documents in other languages are untested and are not a
+supported scenario for the pilot.
+
 ## Approved technology stack
 
 - **Frontend**: React
