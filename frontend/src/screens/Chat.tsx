@@ -14,6 +14,7 @@ import {
   listConversations,
 } from "@/lib/conversations";
 import type { ConversationSummary } from "@/lib/conversations";
+import { submitFeedback } from "@/lib/messages";
 
 void UI;
 
@@ -253,16 +254,16 @@ export default function Screen() {
         setActiveStatus("not-found");
         return;
       }
-      const messages: Message[] = detail.messages.map((m, i) =>
+      const messages: Message[] = detail.messages.map((m) =>
         m.role === "user"
           ? {
-              id: id + "-m" + i,
+              id: m.id,
               role: "user",
               content: m.content,
               created_at: detail.created_at,
             }
           : {
-              id: id + "-m" + i,
+              id: m.id,
               role: "assistant",
               content: m.content,
               created_at: detail.updated_at,
@@ -289,7 +290,10 @@ export default function Screen() {
 
   function finishStream(result: AnswerTerminal, s: StreamState) {
     const msg: AssistantMessage = {
-      id: s.id,
+      // Prefer the backend's persisted message id (needed for feedback);
+      // fall back to the client-generated stream id only if it was somehow
+      // omitted, so the message still renders with a stable React key.
+      id: result.message_id || s.id,
       role: "assistant",
       content: s.text,
       created_at: s.created_at,
@@ -467,13 +471,20 @@ export default function Screen() {
 
   function Feedback({ msg }: { msg: AssistantMessage }) {
     const set = (rating: "up" | "down") => {
+      const next = msg.feedback === rating ? null : rating;
       setActiveMessages((prev) =>
         prev.map((m) =>
-          m.id === msg.id && m.role === "assistant"
-            ? { ...m, feedback: m.feedback === rating ? null : rating }
-            : m,
+          m.id === msg.id && m.role === "assistant" ? { ...m, feedback: next } : m,
         ),
       );
+      // Toggling the same rating back off is a local-only undo -- there is
+      // no "clear my feedback" endpoint, so only a genuine up/down submits.
+      if (next) {
+        void submitFeedback(msg.id, next).catch(() => {
+          // Best effort: the button already reflects the attempt: a failed
+          // submit just means the rating was not recorded server-side.
+        });
+      }
     };
     return (
       <div className="mt-3 flex items-center gap-2">

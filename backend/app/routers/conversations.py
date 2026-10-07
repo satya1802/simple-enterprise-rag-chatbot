@@ -116,6 +116,7 @@ async def get_conversation(
 
     message_outs = [
         MessageOut(
+            id=str(message.id),
             role=message.role,
             content=message.content,
             citations=[

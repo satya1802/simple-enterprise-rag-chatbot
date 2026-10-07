@@ -97,6 +97,7 @@ class CitationOut(BaseModel):
 
 
 class MessageOut(BaseModel):
+    id: str
     role: str
     content: str
     citations: list[CitationOut] = []
@@ -149,12 +150,16 @@ class AnswerResult(BaseModel):
     """The terminal SSE event's JSON payload on POST /answer.
 
     `stream_id` is also carried on every preceding `token` event so a
-    client can correlate them and call POST /answer/stop. `partial` is set
-    when retrieval only partially supports the question (AC-101);
-    `time_to_first_token_ms` is the TTFT instrumentation from AC-091.
+    client can correlate them and call POST /answer/stop. `message_id` is
+    the persisted assistant `Message` row's id -- the id a client passes to
+    `POST /messages/{id}/feedback` -- distinct from `stream_id`, which only
+    identifies the in-flight generation. `partial` is set when retrieval
+    only partially supports the question (AC-101); `time_to_first_token_ms`
+    is the TTFT instrumentation from AC-091.
     """
 
     stream_id: str
+    message_id: str
     citations: list[CitationOut] = []
     not_covered: bool
     partial: bool = False

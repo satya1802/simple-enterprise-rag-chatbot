@@ -29,6 +29,27 @@ def save_file(key: str, content: bytes) -> None:
     logger.info("S3_BUCKET not configured; wrote %s to local fallback storage at %s", key, path)
 
 
+def read_file(key: str) -> bytes:
+    """Read back the bytes `save_file` wrote under `key`.
+
+    Same S3-vs-local-fallback convention as `save_file`/`delete_file`, so a
+    reader (the document-download endpoint, the ingest worker) never has to
+    know which backend actually holds the bytes. Raises on a missing key --
+    callers are expected to translate that into their own "not found"
+    response rather than this module guessing at one.
+    """
+    if S3_BUCKET:
+        import boto3
+
+        client = boto3.client("s3", region_name=AWS_REGION)
+        response = client.get_object(Bucket=S3_BUCKET, Key=key)
+        return response["Body"].read()
+
+    path = os.path.join(LOCAL_UPLOAD_DIR, key)
+    with open(path, "rb") as f:
+        return f.read()
+
+
 def delete_file(key: str) -> None:
     """Best-effort removal of the object at `key`, used to clean up partial writes."""
     try:

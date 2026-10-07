@@ -19,6 +19,9 @@ export interface ConversationSummary {
 }
 
 export interface ConversationMessage {
+  // The persisted Message row's id (MessageOut.id on the backend) -- what
+  // POST /messages/{id}/feedback is called with for an assistant turn.
+  id: string;
   role: "user" | "assistant";
   content: string;
   citations: Citation[];

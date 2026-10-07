@@ -13,9 +13,9 @@ overlapping chunks, embedded one vector per chunk through
 adapter anywhere in this module -- and persisted to `models.Chunk` with
 `document_id`, `filename`, `chunk_index` and `source_type`/`source_url`
 metadata so the answer engine can retrieve and cite the document. Reading
-the stored original back from S3 (or the local fallback directory) mirrors
-`app.services.storage.save_file`'s own convention; boto3 here talks to S3
-only, never a model endpoint.
+the stored original back is `app.services.storage.read_file`, the same
+S3-or-local-fallback function `GET /documents/{id}/file` uses; no boto3 call
+lives in this module directly.
 
 Processing is idempotent per document_id: a successful or no-readable-text
 outcome replaces any chunks a prior run wrote, rather than duplicating them.
@@ -24,16 +24,16 @@ A single document's failure never touches another document's row or chunks.
 
 import json
 import logging
-import os
 import re
 import time
 import uuid
 from io import BytesIO
 
-from app.config import AWS_REGION, LOCAL_UPLOAD_DIR, S3_BUCKET, SQS_INGEST_QUEUE_URL
+from app.config import AWS_REGION, SQS_INGEST_QUEUE_URL
 from app.database import SessionLocal
 from app.models import Chunk, Document
 from app.services.providers import get_provider
+from app.services.storage import read_file as _read_stored_file
 
 logger = logging.getLogger(__name__)
 
@@ -60,23 +60,11 @@ class _PasswordProtectedError(Exception):
 # object storage read-back
 # ---------------------------------------------------------------------------
 
-
-def _read_stored_file(s3_key: str) -> bytes:
-    """Read the original uploaded bytes back from wherever save_file put them.
-
-    Mirrors app.services.storage's S3-vs-local-fallback convention; storage.py
-    only exposes writes (save_file/delete_file), so the read side lives here.
-    """
-    if S3_BUCKET:
-        import boto3
-
-        client = boto3.client("s3", region_name=AWS_REGION)
-        response = client.get_object(Bucket=S3_BUCKET, Key=s3_key)
-        return response["Body"].read()
-
-    path = os.path.join(LOCAL_UPLOAD_DIR, s3_key)
-    with open(path, "rb") as f:
-        return f.read()
+# `_read_stored_file` is `app.services.storage.read_file` imported under its
+# old local name: the original uploaded bytes, read back from wherever
+# `save_file` put them (S3 or the local fallback directory). Kept as one
+# function in `app.services.storage` -- shared by this worker and the
+# `GET /documents/{id}/file` endpoint -- rather than duplicated here.
 
 
 # ---------------------------------------------------------------------------

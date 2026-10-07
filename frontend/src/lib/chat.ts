@@ -17,7 +17,10 @@ import { API_BASE_URL, reportUnauthorized } from "@/lib/api";
 export interface Citation {
   document_id: string;
   source_type: string;
-  source_id: string;
+  // Nullable on the wire (CitationOut.source_id on the backend): a
+  // citation sourced from a system that has no identifier for this chunk
+  // yet still has to round-trip cleanly.
+  source_id: string | null;
   source_url: string | null;
   chunk_index?: number;
   snippet?: string;
@@ -30,6 +33,9 @@ export interface TokenUsage {
 
 export interface AnswerTerminal {
   stream_id: string;
+  // The persisted assistant Message row's id (AnswerResult.message_id on
+  // the backend) -- what POST /messages/{id}/feedback is called with.
+  message_id: string;
   citations: Citation[];
   not_covered: boolean;
   partial: boolean;
@@ -172,6 +178,7 @@ export function streamAnswer(
               settled = true;
               handlers.onDone({
                 stream_id: streamId ?? "",
+                message_id: typeof parsed.message_id === "string" ? parsed.message_id : "",
                 citations: dedupeCitations((parsed.citations as Citation[]) ?? []),
                 not_covered: Boolean(parsed.not_covered),
                 partial: Boolean(parsed.partial),

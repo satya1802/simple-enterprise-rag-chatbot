@@ -1,22 +1,38 @@
-/**
- * Thin wrapper over react-router's `useNavigate`.
- *
- * Every generated screen calls `navigate("chat")`, `navigate("documents")`,
- * etc. -- the bare route name, no leading slash -- which is the spelling the
- * Builder prompt gives screens for in-app navigation. `App.tsx` mounts each
- * screen at `/<route>`, so this hook only has to add the slash the screens
- * never bothered to type and hand the rest straight to react-router.
- *
- * This file is the one piece of scaffolding every screen imports
- * (`@/lib/navigate`) that the template did not generate alongside
- * `@/lib/ui`, `@/lib/icons` and `@/lib/brand` -- without it nothing compiles.
- */
 import { useNavigate as useRouterNavigate } from "react-router-dom";
 
-export function useNavigate() {
-  const routerNavigate = useRouterNavigate();
-  return (to: string) => {
-    const path = to.startsWith("/") ? to : `/${to}`;
-    routerNavigate(path);
-  };
+/**
+ * `navigate(route)` in the preview posted a message to the host. Here it is
+ * real routing, so the route slug the screen was written against has to
+ * become the router path the scaffold mounted it at. This mirrors
+ * `route_to_url_path` on the Python side; the two must agree or a link goes
+ * nowhere.
+ *
+ * NOTE: this hook used to be defined twice -- once here and once, with a
+ * simpler (and behaviourally weaker: no slug normalisation) implementation,
+ * in `navigate.ts` beside it. A bundler resolves the bare specifier
+ * `@/lib/navigate` to exactly one of `navigate.ts`/`navigate.tsx` depending
+ * on its extension-resolution order, which silently made whichever file it
+ * did *not* pick dead code -- and left the two free to drift out of sync.
+ * Both files now carry this same implementation so it no longer matters
+ * which one actually gets resolved.
+ */
+export function toPath(route: string): string {
+  const trimmed = route.trim().replace(/^\/+|\/+$/g, "");
+  if (!trimmed) return "/";
+  return (
+    "/" +
+    trimmed
+      .split("/")
+      .map((segment) =>
+        segment.startsWith(":")
+          ? segment
+          : segment.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      )
+      .join("/")
+  );
+}
+
+export function useNavigate(): (route: string) => void {
+  const navigate = useRouterNavigate();
+  return (route: string) => navigate(toPath(route));
 }

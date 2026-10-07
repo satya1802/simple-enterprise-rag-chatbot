@@ -195,15 +195,14 @@ def _generate_answer_stream(
             is_empty_corpus = db.query(Document).count() == 0
             text = _EMPTY_KNOWLEDGE_BASE_TEXT if is_empty_corpus else _NOT_COVERED_TEXT
 
-            db.add(
-                Message(
-                    conversation_id=conversation_id,
-                    role="assistant",
-                    content=text,
-                    not_covered=True,
-                    token_usage=0,
-                )
+            not_covered_message = Message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=text,
+                not_covered=True,
+                token_usage=0,
             )
+            db.add(not_covered_message)
             db.commit()
 
             _note_first_token()
@@ -212,6 +211,7 @@ def _generate_answer_stream(
                 "done",
                 AnswerResult(
                     stream_id=stream_id,
+                    message_id=str(not_covered_message.id),
                     citations=[],
                     not_covered=True,
                     partial=False,
@@ -297,6 +297,7 @@ def _generate_answer_stream(
             "done",
             AnswerResult(
                 stream_id=stream_id,
+                message_id=str(assistant_message.id),
                 citations=[_citation_payload(scored) for scored in cited],
                 not_covered=False,
                 partial=partial,
@@ -353,6 +354,7 @@ def _generate_answer_stream(
                             "summary": "done event (terminal)",
                             "value": {
                                 "stream_id": "a1b2c3",
+                                "message_id": "7e4411b0-3c92-4a5d-8f31-b0d2e6c7a119",
                                 "citations": [
                                     {
                                         "document_id": "3f9c...",
@@ -374,6 +376,7 @@ def _generate_answer_stream(
                             "summary": "done event, question not covered by the knowledge base",
                             "value": {
                                 "stream_id": "a1b2c3",
+                                "message_id": "9f1c2d44-7a80-4f61-b0ac-2d5e9a1f33b2",
                                 "citations": [],
                                 "not_covered": True,
                                 "partial": False,
@@ -428,6 +431,12 @@ async def answer(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
             )
+        if not conversation.title:
+            # An empty conversation opened via POST /conversations has no
+            # title yet; its first /answer turn titles it exactly as a
+            # brand-new conversation would (AC: US-016-1). A conversation
+            # that already has one is never retitled by a later turn.
+            conversation.title = _derive_title(body.question)
     else:
         # The first user question of a brand-new conversation is also its
         # title (trimmed, <=60 chars): titled once, here, at creation --

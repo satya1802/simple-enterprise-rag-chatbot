@@ -6,6 +6,9 @@ import { useNavigate as useRouterNavigate } from "react-router-dom";
  * become the router path the scaffold mounted it at. This mirrors
  * `route_to_url_path` on the Python side; the two must agree or a link goes
  * nowhere.
+ *
+ * NOTE: kept byte-identical to `navigate.tsx` beside it -- see that file's
+ * comment for why both files exist with the same exports.
  */
 export function toPath(route: string): string {
   const trimmed = route.trim().replace(/^\/+|\/+$/g, "");
