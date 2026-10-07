@@ -44,6 +44,7 @@ from app.database import get_db
 from app.models import Citation, Conversation, Document, Message
 from app.schemas import AnswerRequest, AnswerResult, StopRequest
 from app.services.providers import get_provider
+from app.services.resolution import resolve_question
 from app.services.retrieval import ScoredChunk, search_chunks
 
 router = APIRouter(tags=["answer"])
@@ -351,12 +352,20 @@ async def answer(
         db.add(conversation)
         db.flush()
 
+    # Resolved against whatever prior turns this conversation already has
+    # (none, for a brand-new one) *before* the raw question below is
+    # persisted, so the history used here never includes the current turn
+    # itself (AC-015/AC-111/AC-112). The raw text is what is stored as the
+    # user message; only the resolved question is handed to retrieval and
+    # generation.
+    resolved_question = resolve_question(db, conversation.id, body.question)
+
     conversation.updated_at = datetime.utcnow()
     db.add(Message(conversation_id=conversation.id, role="user", content=body.question))
     db.commit()
 
     return StreamingResponse(
-        _generate_answer_stream(db, conversation.id, body.question),
+        _generate_answer_stream(db, conversation.id, resolved_question),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
