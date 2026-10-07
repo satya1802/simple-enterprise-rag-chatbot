@@ -7,7 +7,22 @@ import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 
 const { Card, Input, Label, Table, THead, TBody, TR, TH, TD } = UI;
-const { Plus, Search, X, Bell, FileText, Package, Calendar, Clock, Trash, Download, Upload, ArrowRight, AlertCircle, CheckCircle } = Icons;
+const {
+  Plus,
+  Search,
+  X,
+  Bell,
+  FileText,
+  Package,
+  Calendar,
+  Clock,
+  Trash,
+  Download,
+  Upload,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle,
+} = Icons;
 
 const MAX_BYTES = 25 * 1024 * 1024;
 const MAX_LABEL = "25 MB";
@@ -192,10 +207,30 @@ function extOf(name) {
 }
 
 const STATUS_STYLE = {
-  Ready: { fg: "#1C5D4A", bg: "rgba(28, 93, 74, 0.10)", bd: "rgba(28, 93, 74, 0.30)", icon: "CheckCircle" },
-  Processing: { fg: "#49534F", bg: "rgba(94, 106, 102, 0.12)", bd: "rgba(94, 106, 102, 0.30)", icon: "Clock" },
-  "No readable text": { fg: "#8C2F39", bg: "rgba(140, 47, 57, 0.09)", bd: "rgba(140, 47, 57, 0.28)", icon: "AlertCircle" },
-  Failed: { fg: "#8C2F39", bg: "rgba(140, 47, 57, 0.09)", bd: "rgba(140, 47, 57, 0.28)", icon: "AlertCircle" },
+  Ready: {
+    fg: "#1C5D4A",
+    bg: "rgba(28, 93, 74, 0.10)",
+    bd: "rgba(28, 93, 74, 0.30)",
+    icon: "CheckCircle",
+  },
+  Processing: {
+    fg: "#49534F",
+    bg: "rgba(94, 106, 102, 0.12)",
+    bd: "rgba(94, 106, 102, 0.30)",
+    icon: "Clock",
+  },
+  "No readable text": {
+    fg: "#8C2F39",
+    bg: "rgba(140, 47, 57, 0.09)",
+    bd: "rgba(140, 47, 57, 0.28)",
+    icon: "AlertCircle",
+  },
+  Failed: {
+    fg: "#8C2F39",
+    bg: "rgba(140, 47, 57, 0.09)",
+    bd: "rgba(140, 47, 57, 0.28)",
+    icon: "AlertCircle",
+  },
 };
 
 const StatusPill = ({ status }) => {
@@ -216,12 +251,18 @@ const Btn = ({ variant = "secondary", className = "", style = {}, children, ...r
   const base =
     "inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A] disabled:opacity-50 disabled:cursor-not-allowed";
   const variants = {
-    primary: { cls: "px-4 py-2 text-white hover:opacity-90", st: { backgroundColor: brand.primaryColor } },
+    primary: {
+      cls: "px-4 py-2 text-white hover:opacity-90",
+      st: { backgroundColor: brand.primaryColor },
+    },
     secondary: {
       cls: "px-4 py-2 border bg-white hover:bg-[#F1F3F1]",
       st: { borderColor: "#D3D9D5", color: "#283330" },
     },
-    danger: { cls: "px-4 py-2 text-white hover:opacity-90", st: { backgroundColor: brand.accentColor } },
+    danger: {
+      cls: "px-4 py-2 text-white hover:opacity-90",
+      st: { backgroundColor: brand.accentColor },
+    },
     ghost: { cls: "px-2.5 py-2 hover:bg-[#EDF0EE]", st: { color: brand.neutralColor } },
   };
   const v = variants[variant] || variants.secondary;
@@ -251,7 +292,9 @@ export default function Screen() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [mineOnly, setMineOnly] = React.useState(false);
 
-  const [deleteTarget, setDeleteTarget] = React.useState<(typeof INITIAL_DOCUMENTS)[number] | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<(typeof INITIAL_DOCUMENTS)[number] | null>(
+    null,
+  );
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dialogRef = React.useRef<HTMLDivElement>(null);
@@ -280,10 +323,10 @@ export default function Screen() {
                         "No text layer was found. Release one reads text-only PDFs — scanned or image-only files are not read.",
                     }
                   : { ...x, status: "Ready", status_reason: "" };
-              })
+              }),
             );
             setLive(`${d.filename} finished processing and is now answerable.`);
-          }, delay)
+          }, delay),
         );
       });
     return () => timers.forEach(clearTimeout);
@@ -311,8 +354,8 @@ export default function Screen() {
     if (e.key === "Tab" && dialogRef.current) {
       const nodes = Array.from(
         dialogRef.current.querySelectorAll<HTMLElement & { disabled?: boolean }>(
-          "button, [href], input, select, textarea"
-        )
+          "button, [href], input, select, textarea",
+        ),
       ).filter((n) => !n.disabled);
       if (nodes.length === 0) return;
       const first = nodes[0];
@@ -421,7 +464,10 @@ export default function Screen() {
 
   const openFile = (doc: (typeof INITIAL_DOCUMENTS)[number]) => {
     setLive(`Opening ${doc.filename} from document storage.`);
-    setBanner({ tone: "neutral", text: `Opening “${doc.filename}” from document storage (GET /documents/${doc.id}/file).` });
+    setBanner({
+      tone: "neutral",
+      text: `Opening “${doc.filename}” from document storage (GET /documents/${doc.id}/file).`,
+    });
   };
 
   /* ---- filtering ---- */
@@ -437,7 +483,8 @@ export default function Screen() {
     total: documents.length,
     ready: documents.filter((d) => d.status === "Ready").length,
     processing: documents.filter((d) => d.status === "Processing").length,
-    attention: documents.filter((d) => d.status === "Failed" || d.status === "No readable text").length,
+    attention: documents.filter((d) => d.status === "Failed" || d.status === "No readable text")
+      .length,
   };
 
   const filtersActive = query.trim() !== "" || statusFilter !== "all" || mineOnly;
@@ -473,8 +520,9 @@ export default function Screen() {
             Knowledge base
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: brand.neutralColor }}>
-            Every document the chatbot can answer from, shared across the company. Upload PDF, DOCX, TXT or Markdown
-            files; each one is extracted, chunked, embedded and written to the combined index.
+            Every document the chatbot can answer from, shared across the company. Upload PDF, DOCX,
+            TXT or Markdown files; each one is extracted, chunked, embedded and written to the
+            combined index.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -499,12 +547,16 @@ export default function Screen() {
           borderRadius: brand.radius,
         }}
       >
-        <Icons.AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" style={{ color: brand.accentColor }} />
+        <Icons.AlertCircle
+          className="mt-0.5 h-5 w-5 shrink-0"
+          aria-hidden="true"
+          style={{ color: brand.accentColor }}
+        />
         <p className="text-sm leading-6" style={{ color: "#5C2027" }}>
-          <strong className="font-semibold">Uploads are shared with everyone.</strong> Anything added here joins the
-          shared company-wide knowledge base, is answerable to all employees and can be deleted by any employee. Upload
-          only content that is safe for every colleague to read — there is no private or restricted option in this
-          release.
+          <strong className="font-semibold">Uploads are shared with everyone.</strong> Anything
+          added here joins the shared company-wide knowledge base, is answerable to all employees
+          and can be deleted by any employee. Upload only content that is safe for every colleague
+          to read — there is no private or restricted option in this release.
         </p>
       </div>
 
@@ -520,10 +572,16 @@ export default function Screen() {
               className="border bg-white px-4 py-3"
               style={{ borderColor: "#DEE3E0", borderRadius: brand.radius }}
             >
-              <dt className="text-xs font-medium uppercase tracking-wide" style={{ color: brand.neutralColor }}>
+              <dt
+                className="text-xs font-medium uppercase tracking-wide"
+                style={{ color: brand.neutralColor }}
+              >
                 {s.label}
               </dt>
-              <dd className="mt-1 text-2xl font-semibold" style={{ color: "#15201D", fontFamily: brand.fontHeading }}>
+              <dd
+                className="mt-1 text-2xl font-semibold"
+                style={{ color: "#15201D", fontFamily: brand.fontHeading }}
+              >
                 {s.value}
               </dd>
             </div>
@@ -543,8 +601,8 @@ export default function Screen() {
               Add documents
             </h2>
             <p className="mt-1 text-sm" style={{ color: brand.neutralColor }}>
-              PDF, DOCX, TXT and Markdown (.md), up to {MAX_LABEL} per file. PDFs are read as text only — scanned or
-              image-only files will index no text.
+              PDF, DOCX, TXT and Markdown (.md), up to {MAX_LABEL} per file. PDFs are read as text
+              only — scanned or image-only files will index no text.
             </p>
 
             <form className="mt-5" onSubmit={handleUpload} noValidate>
@@ -581,8 +639,13 @@ export default function Screen() {
                       className="mt-2 block w-full max-w-md text-sm file:mr-3 file:rounded-md file:border file:border-[#D3D9D5] file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#283330] hover:file:bg-[#F1F3F1] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A]"
                       style={{ color: brand.neutralColor }}
                     />
-                    <p id="upload-help" className="mt-2 text-xs" style={{ color: brand.neutralColor }}>
-                      Or drag files onto this area. Each file is tracked separately with its own processing status.
+                    <p
+                      id="upload-help"
+                      className="mt-2 text-xs"
+                      style={{ color: brand.neutralColor }}
+                    >
+                      Or drag files onto this area. Each file is tracked separately with its own
+                      processing status.
                     </p>
                   </div>
                   <Btn type="submit" variant="primary" className="shrink-0">
@@ -595,7 +658,10 @@ export default function Screen() {
 
                 {staged.length > 0 && (
                   <div className="mt-5">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: brand.neutralColor }}>
+                    <h3
+                      className="text-xs font-semibold uppercase tracking-wide"
+                      style={{ color: brand.neutralColor }}
+                    >
                       Selected ({staged.length})
                     </h3>
                     <ul className="mt-2 flex flex-wrap gap-2">
@@ -605,7 +671,11 @@ export default function Screen() {
                           className="flex items-center gap-2 border bg-white py-1 pl-3 pr-1 text-sm"
                           style={{ borderColor: "#DEE3E0", borderRadius: brand.radius }}
                         >
-                          <Icons.FileText className="h-4 w-4" aria-hidden="true" style={{ color: brand.neutralColor }} />
+                          <Icons.FileText
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                            style={{ color: brand.neutralColor }}
+                          />
                           <span className="max-w-[18rem] truncate">{f.name}</span>
                           <span className="text-xs" style={{ color: brand.neutralColor }}>
                             {fmtSize(f.size)}
@@ -625,7 +695,11 @@ export default function Screen() {
                 )}
 
                 {formError && (
-                  <p className="mt-4 flex items-center gap-2 text-sm font-medium" style={{ color: brand.accentColor }} role="alert">
+                  <p
+                    className="mt-4 flex items-center gap-2 text-sm font-medium"
+                    style={{ color: brand.accentColor }}
+                    role="alert"
+                  >
                     <Icons.AlertCircle className="h-4 w-4" aria-hidden="true" />
                     {formError}
                   </p>
@@ -645,8 +719,9 @@ export default function Screen() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="text-sm font-semibold" style={{ color: "#5C2027" }}>
-                    {rejections.length} {rejections.length === 1 ? "file was" : "files were"} not accepted — nothing from{" "}
-                    {rejections.length === 1 ? "it" : "them"} reached the index
+                    {rejections.length} {rejections.length === 1 ? "file was" : "files were"} not
+                    accepted — nothing from {rejections.length === 1 ? "it" : "them"} reached the
+                    index
                   </h3>
                   <Btn
                     variant="ghost"
@@ -682,13 +757,26 @@ export default function Screen() {
         >
           <p className="flex items-start gap-3 text-sm leading-6" style={{ color: "#263330" }}>
             {banner.tone === "success" ? (
-              <Icons.CheckCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" style={{ color: brand.primaryColor }} />
+              <Icons.CheckCircle
+                className="mt-0.5 h-5 w-5 shrink-0"
+                aria-hidden="true"
+                style={{ color: brand.primaryColor }}
+              />
             ) : (
-              <Icons.FileText className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" style={{ color: brand.neutralColor }} />
+              <Icons.FileText
+                className="mt-0.5 h-5 w-5 shrink-0"
+                aria-hidden="true"
+                style={{ color: brand.neutralColor }}
+              />
             )}
             {banner.text}
           </p>
-          <Btn variant="ghost" className="px-1.5 py-1" aria-label="Dismiss notification" onClick={() => setBanner(null)}>
+          <Btn
+            variant="ghost"
+            className="px-1.5 py-1"
+            aria-label="Dismiss notification"
+            onClick={() => setBanner(null)}
+          >
             <Icons.X className="h-4 w-4" aria-hidden="true" />
           </Btn>
         </div>
@@ -777,7 +865,8 @@ export default function Screen() {
             </div>
 
             <p className="mt-4 text-sm" style={{ color: brand.neutralColor }} aria-live="polite">
-              Showing {filtered.length} of {documents.length} {documents.length === 1 ? "document" : "documents"}
+              Showing {filtered.length} of {documents.length}{" "}
+              {documents.length === 1 ? "document" : "documents"}
             </p>
 
             {/* Table / empty states */}
@@ -786,13 +875,21 @@ export default function Screen() {
                 className="mt-4 border border-dashed px-6 py-12 text-center"
                 style={{ borderColor: "#CDD5D1", borderRadius: brand.radius }}
               >
-                <Icons.Package className="mx-auto h-8 w-8" aria-hidden="true" style={{ color: brand.neutralColor }} />
+                <Icons.Package
+                  className="mx-auto h-8 w-8"
+                  aria-hidden="true"
+                  style={{ color: brand.neutralColor }}
+                />
                 <h3 className="mt-3 text-base font-semibold" style={{ color: "#15201D" }}>
                   The knowledge base is empty
                 </h3>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: brand.neutralColor }}>
-                  Until a document is uploaded the chatbot will answer every question with “not covered by the knowledge
-                  base”. Upload a PDF, DOCX, TXT or Markdown file to get started.
+                <p
+                  className="mx-auto mt-2 max-w-md text-sm leading-6"
+                  style={{ color: brand.neutralColor }}
+                >
+                  Until a document is uploaded the chatbot will answer every question with “not
+                  covered by the knowledge base”. Upload a PDF, DOCX, TXT or Markdown file to get
+                  started.
                 </p>
                 <div className="mt-5">
                   <Btn
@@ -809,13 +906,21 @@ export default function Screen() {
                 className="mt-4 border border-dashed px-6 py-12 text-center"
                 style={{ borderColor: "#CDD5D1", borderRadius: brand.radius }}
               >
-                <Icons.Search className="mx-auto h-8 w-8" aria-hidden="true" style={{ color: brand.neutralColor }} />
+                <Icons.Search
+                  className="mx-auto h-8 w-8"
+                  aria-hidden="true"
+                  style={{ color: brand.neutralColor }}
+                />
                 <h3 className="mt-3 text-base font-semibold" style={{ color: "#15201D" }}>
                   No documents match your filters
                 </h3>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: brand.neutralColor }}>
-                  Nothing in the corpus matches {query.trim() ? `“${query.trim()}”` : "the current filters"}. Try a
-                  different filename or clear the filters.
+                <p
+                  className="mx-auto mt-2 max-w-md text-sm leading-6"
+                  style={{ color: brand.neutralColor }}
+                >
+                  Nothing in the corpus matches{" "}
+                  {query.trim() ? `“${query.trim()}”` : "the current filters"}. Try a different
+                  filename or clear the filters.
                 </p>
                 <div className="mt-5">
                   <Btn variant="secondary" onClick={clearFilters}>
@@ -847,12 +952,13 @@ export default function Screen() {
                               aria-hidden="true"
                               style={{ color: brand.neutralColor }}
                             />
-                            <div className="min-w-0">
+                            <div className="min-w-0 max-w-[16rem] sm:max-w-xs">
                               <button
                                 type="button"
                                 onClick={() => openFile(d)}
                                 aria-label={`Open ${d.filename}`}
-                                className="text-left text-sm font-medium underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A]"
+                                title={d.filename}
+                                className="block w-full truncate text-left text-sm font-medium underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1C5D4A]"
                                 style={{ color: brand.primaryColor, borderRadius: brand.radius }}
                               >
                                 {d.filename}
@@ -874,14 +980,20 @@ export default function Screen() {
                           </span>
                         </UI.TD>
                         <UI.TD>
-                          <span className="whitespace-nowrap text-sm" style={{ color: brand.neutralColor }}>
+                          <span
+                            className="whitespace-nowrap text-sm"
+                            style={{ color: brand.neutralColor }}
+                          >
                             {fmtDate(d.uploaded_at)}
                           </span>
                         </UI.TD>
                         <UI.TD>
                           <StatusPill status={d.status} />
                           {d.status_reason && (
-                            <p className="mt-2 max-w-sm text-xs leading-5" style={{ color: "#6B3036" }}>
+                            <p
+                              className="mt-2 max-w-sm text-xs leading-5"
+                              style={{ color: "#6B3036" }}
+                            >
                               {d.status_reason}
                             </p>
                           )}
@@ -940,20 +1052,30 @@ export default function Screen() {
               Delete “{deleteTarget.filename}” for everyone?
             </h2>
             <p id="delete-desc" className="mt-3 text-sm leading-6" style={{ color: "#3C4743" }}>
-              This removes the document, its stored file and all of its chunks and embeddings from the shared corpus.
-              Every employee loses access to it, and the chatbot will stop citing it — if nothing else covers the topic
-              it will answer “not covered by the knowledge base”. The deletion is recorded in the audit log against your
-              name. This cannot be undone.
+              This removes the document, its stored file and all of its chunks and embeddings from
+              the shared corpus. Every employee loses access to it, and the chatbot will stop citing
+              it — if nothing else covers the topic it will answer “not covered by the knowledge
+              base”. The deletion is recorded in the audit log against your name. This cannot be
+              undone.
             </p>
-            <dl className="mt-4 grid grid-cols-2 gap-3 border p-4 text-sm" style={{ borderColor: "#DEE3E0", borderRadius: brand.radius }}>
+            <dl
+              className="mt-4 grid grid-cols-2 gap-3 border p-4 text-sm"
+              style={{ borderColor: "#DEE3E0", borderRadius: brand.radius }}
+            >
               <div>
-                <dt className="text-xs uppercase tracking-wide" style={{ color: brand.neutralColor }}>
+                <dt
+                  className="text-xs uppercase tracking-wide"
+                  style={{ color: brand.neutralColor }}
+                >
                   Uploaded by
                 </dt>
                 <dd className="mt-1">{deleteTarget.uploader}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide" style={{ color: brand.neutralColor }}>
+                <dt
+                  className="text-xs uppercase tracking-wide"
+                  style={{ color: brand.neutralColor }}
+                >
                   Status
                 </dt>
                 <dd className="mt-1">

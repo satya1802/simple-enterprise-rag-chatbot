@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -39,7 +40,9 @@ describe("App", () => {
       </MemoryRouter>,
     );
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /Sign in to the knowledge assistant/i })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("heading", { name: /Sign in to the knowledge assistant/i }),
+      ).toBeInTheDocument(),
     );
   });
 
@@ -54,5 +57,46 @@ describe("App", () => {
       </MemoryRouter>,
     );
     await waitFor(() => expect(screen.getAllByText("Satya Ganaraju").length).toBeGreaterThan(0));
+  });
+
+  it("reveals a reachable menu button that opens and closes the off-canvas nav drawer (AC-070)", async () => {
+    mockMe({ status: 401 });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+
+    const openButton = screen.getByRole("button", { name: /open navigation menu/i });
+    expect(openButton).toBeVisible();
+    expect(openButton).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(openButton);
+    expect(openButton).toHaveAttribute("aria-expanded", "true");
+    const closeButton = screen.getByRole("button", { name: /close navigation menu/i });
+    expect(closeButton).toBeVisible();
+
+    await user.click(closeButton);
+    expect(openButton).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("closes the drawer on Escape", async () => {
+    mockMe({ status: 401 });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+
+    const openButton = screen.getByRole("button", { name: /open navigation menu/i });
+    await user.click(openButton);
+    expect(openButton).toHaveAttribute("aria-expanded", "true");
+
+    await user.keyboard("{Escape}");
+    expect(openButton).toHaveAttribute("aria-expanded", "false");
   });
 });

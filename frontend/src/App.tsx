@@ -7,6 +7,7 @@ import Documents from "@/screens/Documents";
 import GettingStarted from "@/screens/GettingStarted";
 import ApiReference from "@/screens/ApiReference";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { Icons } from "@/lib/icons";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -43,42 +44,111 @@ function AccountChrome() {
   );
 }
 
+/**
+ * Below `lg` the persistent sidebar becomes an off-canvas drawer reached via a
+ * menu button in a small top bar, so the app shell reflows to a single usable
+ * column at narrow widths (AC-070) without changing the auth guard or routes.
+ */
 function AppShell() {
+  const [navOpen, setNavOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!navOpen) return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [navOpen]);
+
+  const links = (
+    <nav className="flex flex-col gap-1" onClick={() => setNavOpen(false)}>
+      <NavLink to="/sign-in" className={navLinkClass}>
+        {"Sign in"}
+      </NavLink>
+      <NavLink to="/chat" className={navLinkClass}>
+        {"Chat"}
+      </NavLink>
+      <NavLink to="/documents" className={navLinkClass}>
+        {"Knowledge base"}
+      </NavLink>
+      <NavLink to="/getting-started" className={navLinkClass}>
+        {"Getting started"}
+      </NavLink>
+      <NavLink to="/api-reference" className={navLinkClass}>
+        {"API reference"}
+      </NavLink>
+    </nav>
+  );
+
   return (
-    <div className="flex min-h-screen">
-      <aside
-        className="w-56 shrink-0 border-r p-4"
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      <header
+        className="flex items-center justify-between border-b px-4 py-3 lg:hidden"
         style={{
           backgroundColor: "var(--brand-surface)",
           borderColor: "var(--brand-border)",
         }}
       >
-        <p
-          className="mb-4 px-3 text-sm font-semibold"
-          style={{ fontFamily: "var(--brand-font-heading)" }}
-        >
+        <p className="text-sm font-semibold" style={{ fontFamily: "var(--brand-font-heading)" }}>
           {"Simple enterprise RAG chatbot"}
         </p>
+        <button
+          type="button"
+          onClick={() => setNavOpen(true)}
+          aria-label="Open navigation menu"
+          aria-haspopup="true"
+          aria-expanded={navOpen}
+          aria-controls="app-sidebar"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--brand-radius)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+          style={{ color: "var(--brand-fg)" }}
+        >
+          <Icons.Menu size={20} aria-hidden="true" />
+        </button>
+      </header>
+
+      {navOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          aria-hidden="true"
+          onClick={() => setNavOpen(false)}
+        />
+      )}
+
+      <aside
+        id="app-sidebar"
+        className={[
+          "fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] shrink-0 overflow-y-auto border-r p-4",
+          "transition-transform duration-200 ease-out",
+          "lg:static lg:z-auto lg:w-56 lg:max-w-none lg:translate-x-0",
+          navOpen ? "translate-x-0 shadow-xl" : "-translate-x-full",
+        ].join(" ")}
+        style={{
+          backgroundColor: "var(--brand-surface)",
+          borderColor: "var(--brand-border)",
+        }}
+      >
+        <div className="mb-4 flex items-center justify-between gap-2 px-3">
+          <p
+            className="text-sm font-semibold"
+            style={{ fontFamily: "var(--brand-font-heading)" }}
+          >
+            {"Simple enterprise RAG chatbot"}
+          </p>
+          <button
+            type="button"
+            onClick={() => setNavOpen(false)}
+            aria-label="Close navigation menu"
+            className="rounded-[var(--brand-radius)] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] lg:hidden"
+            style={{ color: "var(--brand-fg-muted)" }}
+          >
+            <Icons.X size={18} aria-hidden="true" />
+          </button>
+        </div>
         <AccountChrome />
-        <nav className="flex flex-col gap-1">
-          <NavLink to="/sign-in" className={navLinkClass}>
-            {"Sign in"}
-          </NavLink>
-          <NavLink to="/chat" className={navLinkClass}>
-            {"Chat"}
-          </NavLink>
-          <NavLink to="/documents" className={navLinkClass}>
-            {"Knowledge base"}
-          </NavLink>
-          <NavLink to="/getting-started" className={navLinkClass}>
-            {"Getting started"}
-          </NavLink>
-          <NavLink to="/api-reference" className={navLinkClass}>
-            {"API reference"}
-          </NavLink>
-        </nav>
+        {links}
       </aside>
-      <main className="flex-1 overflow-auto">
+      <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
         <Routes>
           <Route path="/sign-in" element={<SignIn />} />
           <Route
