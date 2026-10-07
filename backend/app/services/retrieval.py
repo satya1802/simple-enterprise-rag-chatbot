@@ -21,9 +21,8 @@ document simply no longer exists in the table these queries scan: there is
 no separate "is the document still there" check to get wrong.
 """
 
-from dataclasses import dataclass
-
 import re
+from dataclasses import dataclass
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -110,9 +109,7 @@ def _vector_candidates(db: Session, question: str, limit: int) -> list[Chunk]:
         return base_query.order_by(Chunk.embedding.cosine_distance(query_vector)).limit(limit).all()
 
     candidates = base_query.all()
-    candidates.sort(
-        key=lambda c: _cosine_similarity(list(c.embedding), query_vector), reverse=True
-    )
+    candidates.sort(key=lambda c: _cosine_similarity(list(c.embedding), query_vector), reverse=True)
     return candidates[:limit]
 
 
