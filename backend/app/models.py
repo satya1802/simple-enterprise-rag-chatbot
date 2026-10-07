@@ -118,7 +118,15 @@ class AuditLog(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     action: Mapped[str] = mapped_column(Text)
-    document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
+    # Nullable + ondelete="SET NULL": the audited document row is gone by
+    # design (this is the deletion audit trail), so the FK must not block
+    # or be broken by that very deletion. `document_filename` is a durable
+    # identity snapshot taken at delete time so the audit entry still names
+    # the document after document_id is nulled out.
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+    document_filename: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 

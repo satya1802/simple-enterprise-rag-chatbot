@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.auth import SessionUser, get_current_user
 from app.config import MAX_UPLOAD_BYTES
 from app.database import get_db
-from app.models import AuditLog, Chunk, Document, User
+from app.models import AuditLog, Chunk, Citation, Document, User
 from app.schemas import (
     DocumentListResponse,
     DocumentOut,
@@ -185,12 +185,17 @@ async def delete_document(
     """Remove document, its S3 file and all chunks/embeddings; write audit entry.
 
     No visibility/owner-scope check: any authenticated employee may delete
-    any document (AC per packet). The DB side -- chunk rows, the document
-    row and the audit entry -- commits as a single transaction so a
-    mid-transaction failure leaves no orphan chunks; the object-store
-    delete happens only after that commit succeeds, so a failure there
-    never leaves the DB and the stored object out of sync in a way that
-    orphans DB rows.
+    any document (AC per packet). The DB side -- dependent citation rows,
+    chunk rows, the audit entry and the document row -- commits as a
+    single transaction so a mid-transaction failure leaves no orphans; the
+    object-store delete happens only after that commit succeeds, so a
+    failure there never leaves the DB and the stored object out of sync in
+    a way that orphans DB rows. Citation rows referencing this document are
+    removed outright (Citation.document_id is not nullable) so the
+    document delete never trips a foreign-key violation on Postgres. The
+    audit entry carries a `document_filename` identity snapshot and a
+    nullable, ON DELETE SET NULL document_id, so it survives the document
+    row's deletion intact.
     """
     try:
         doc_uuid = uuid.UUID(document_id)
@@ -204,13 +209,16 @@ async def delete_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     s3_key = document.s3_key
+    filename = document.filename
 
+    db.query(Citation).filter(Citation.document_id == doc_uuid).delete()
     db.query(Chunk).filter(Chunk.document_id == doc_uuid).delete()
     db.add(
         AuditLog(
             actor_id=uuid.UUID(user.id),
             action="document.delete",
             document_id=doc_uuid,
+            document_filename=filename,
         )
     )
     db.delete(document)
