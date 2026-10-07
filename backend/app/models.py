@@ -79,9 +79,7 @@ class Conversation(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     # Bumped whenever a new turn is added, so GET /conversations can order
     # "most recent first" by activity rather than only creation time.
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
 
 class Message(Base):

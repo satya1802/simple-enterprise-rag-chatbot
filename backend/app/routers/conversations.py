@@ -111,9 +111,7 @@ async def get_conversation(
     message_ids = [m.id for m in messages]
     citations_by_message: dict[uuid.UUID, list[Citation]] = defaultdict(list)
     if message_ids:
-        for citation in (
-            db.query(Citation).filter(Citation.message_id.in_(message_ids)).all()
-        ):
+        for citation in db.query(Citation).filter(Citation.message_id.in_(message_ids)).all():
             citations_by_message[citation.message_id].append(citation)
 
     message_outs = [
