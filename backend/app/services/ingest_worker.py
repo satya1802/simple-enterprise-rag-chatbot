@@ -271,9 +271,7 @@ def process_document(document_id: str) -> None:
                     "source_url": document.source_url,
                 },
             )
-            for index, (chunk_text, vector) in enumerate(
-                zip(chunk_texts, embeddings, strict=True)
-            )
+            for index, (chunk_text, vector) in enumerate(zip(chunk_texts, embeddings, strict=True))
         ]
         _replace_chunks(db, document.id, chunk_rows)
         _set_status(db, document, "Ready", None)

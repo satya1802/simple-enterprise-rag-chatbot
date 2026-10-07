@@ -146,7 +146,9 @@ def test_docx_document_supported(db, uploader, fake_provider):
     doc = DocxDocument()
     doc.add_paragraph("This is a docx paragraph with real extractable text.")
     doc.save(buf)
-    document = _make_document(db, uploader, fmt="docx", filename="report.docx", content=buf.getvalue())
+    document = _make_document(
+        db, uploader, fmt="docx", filename="report.docx", content=buf.getvalue()
+    )
     try:
         ingest_worker.process_document(str(document.id))
         db.refresh(document)
@@ -176,7 +178,9 @@ def test_scanned_pdf_with_no_text_yields_no_readable_text_and_zero_chunks(
         db.refresh(document)
         assert document.status == "No readable text"
         assert document.status_reason
-        assert "scanned" in document.status_reason.lower() or "image" in document.status_reason.lower()
+        assert (
+            "scanned" in document.status_reason.lower() or "image" in document.status_reason.lower()
+        )
 
         chunks = db.query(Chunk).filter(Chunk.document_id == document.id).all()
         assert len(chunks) == 0
@@ -240,9 +244,7 @@ def test_reprocessing_is_idempotent_and_replaces_prior_chunks(db, uploader, fake
     try:
         ingest_worker.process_document(str(document.id))
         db.refresh(document)
-        first_ids = {
-            c.id for c in db.query(Chunk).filter(Chunk.document_id == document.id).all()
-        }
+        first_ids = {c.id for c in db.query(Chunk).filter(Chunk.document_id == document.id).all()}
         assert len(first_ids) > 0
 
         ingest_worker.process_document(str(document.id))
