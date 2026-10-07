@@ -166,3 +166,23 @@ class StopRequest(BaseModel):
     """POST /answer/stop request body."""
 
     stream_id: str
+
+
+class TokenEvent(BaseModel):
+    """SSE `token` event payload: zero or more precede the terminal event."""
+
+    stream_id: str
+    delta: str
+
+
+class StoppedEvent(BaseModel):
+    """SSE `stopped` terminal event payload (POST /answer/stop took effect)."""
+
+    stream_id: str
+
+
+class ErrorEvent(BaseModel):
+    """SSE `error` terminal event payload (retrieval or generation failure)."""
+
+    stream_id: str
+    message: str

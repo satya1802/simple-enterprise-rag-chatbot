@@ -42,7 +42,14 @@ from app.auth import SessionUser, get_current_user
 from app.config import RETRIEVAL_PARTIAL_CONFIDENCE_THRESHOLD
 from app.database import get_db
 from app.models import Citation, Conversation, Document, Message
-from app.schemas import AnswerRequest, AnswerResult, StopRequest
+from app.schemas import (
+    AnswerRequest,
+    AnswerResult,
+    ErrorEvent,
+    StopRequest,
+    StoppedEvent,
+    TokenEvent,
+)
 from app.services.providers import get_provider
 from app.services.resolution import resolve_question
 from app.services.retrieval import ScoredChunk, search_chunks
@@ -310,15 +317,92 @@ def _generate_answer_stream(
     responses={
         200: {
             "description": (
-                "Server-Sent Events stream. Zero or more `token` events "
-                '(`data: {"stream_id", "delta"}`), followed by exactly one '
-                "terminal event: `done` (the AnswerResult payload below), "
-                "`stopped` (generation was halted via POST /answer/stop), "
-                'or `error` (`data: {"stream_id", "message"}`) on a '
-                "provider or retrieval failure."
+                "Server-Sent Events stream, identical for any authenticated "
+                "caller (no React-specific framing): each `event:` line "
+                "names one of four event types and `data:` carries that "
+                "event's JSON payload. Zero or more `token` events "
+                "(TokenEvent: `stream_id`, `delta`) precede exactly one "
+                "terminal event -- `done` (AnswerResult: `stream_id`, "
+                "`citations[]` of {document_id, source_type, source_id, "
+                "source_url}, `not_covered`, `partial`, `token_usage`, "
+                "`time_to_first_token_ms`), `stopped` (StoppedEvent: "
+                "`stream_id`, after POST /answer/stop takes effect), or "
+                "`error` (ErrorEvent: `stream_id`, `message`) on a "
+                "retrieval or provider failure. When no retrieved chunk "
+                "clears the relevance threshold, the terminal `done` event "
+                "has `not_covered=true`, `citations=[]`, and the preceding "
+                "`token` text states explicitly that the question is not "
+                "covered by the knowledge base -- identical for any caller."
             ),
-            "content": {"text/event-stream": {"schema": AnswerResult.model_json_schema()}},
-        }
+            "content": {
+                "text/event-stream": {
+                    "schema": {
+                        "oneOf": [
+                            TokenEvent.model_json_schema(),
+                            AnswerResult.model_json_schema(),
+                            StoppedEvent.model_json_schema(),
+                            ErrorEvent.model_json_schema(),
+                        ]
+                    },
+                    "examples": {
+                        "token": {
+                            "summary": "token event",
+                            "value": {"stream_id": "a1b2c3", "delta": "The "},
+                        },
+                        "done": {
+                            "summary": "done event (terminal)",
+                            "value": {
+                                "stream_id": "a1b2c3",
+                                "citations": [
+                                    {
+                                        "document_id": "3f9c...",
+                                        "source_type": "confluence",
+                                        "source_id": "123456",
+                                        "source_url": "https://example.atlassian.net/wiki/x",
+                                    }
+                                ],
+                                "not_covered": False,
+                                "partial": False,
+                                "token_usage": {
+                                    "prompt_tokens": 512,
+                                    "completion_tokens": 128,
+                                },
+                                "time_to_first_token_ms": 340.5,
+                            },
+                        },
+                        "not_covered": {
+                            "summary": "done event, question not covered by the knowledge base",
+                            "value": {
+                                "stream_id": "a1b2c3",
+                                "citations": [],
+                                "not_covered": True,
+                                "partial": False,
+                                "token_usage": {"prompt_tokens": 0, "completion_tokens": 0},
+                                "time_to_first_token_ms": None,
+                            },
+                        },
+                        "stopped": {
+                            "summary": "stopped event (terminal)",
+                            "value": {"stream_id": "a1b2c3"},
+                        },
+                        "error": {
+                            "summary": "error event (terminal)",
+                            "value": {
+                                "stream_id": "a1b2c3",
+                                "message": "Answer generation failed; please try again.",
+                            },
+                        },
+                    },
+                }
+            },
+        },
+        401: {
+            "description": (
+                "No valid session: a 401 challenge with a WWW-Authenticate "
+                "header and no corpus content in the body, enforced by the "
+                "shared get_current_user dependency regardless of caller."
+            ),
+        },
     },
 )
 async def answer(
@@ -371,7 +455,18 @@ async def answer(
     )
 
 
-@router.post("/answer/stop", status_code=204)
+@router.post(
+    "/answer/stop",
+    status_code=204,
+    responses={
+        401: {
+            "description": (
+                "No valid session: a 401 challenge with a WWW-Authenticate "
+                "header and no corpus content in the body."
+            ),
+        },
+    },
+)
 async def stop_answer(
     body: StopRequest,
     user: Annotated[SessionUser, Depends(get_current_user)],
