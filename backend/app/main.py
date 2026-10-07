@@ -45,6 +45,7 @@ app.add_middleware(
 # startup. Replace this with Alembic before anything holds data worth keeping.
 Base.metadata.create_all(bind=engine)
 
+
 @app.middleware("http")
 async def _no_store_cache_headers(request: Request, call_next):
     """Every response is marked uncacheable.
