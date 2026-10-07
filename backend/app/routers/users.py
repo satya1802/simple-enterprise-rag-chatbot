@@ -5,17 +5,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from app.auth import SessionUser, get_current_user
-from app.schemas import StubResponse
+from app.schemas import UserOut
 
 router = APIRouter(tags=["users"])
 
 
-@router.get("/me", response_model=StubResponse)
-async def me(user: Annotated[SessionUser, Depends(get_current_user)]) -> StubResponse:
-    """Return current user display name and role derived from group claims.
-
-    Shape: `app.schemas.UserOut`. The real handler reads it off
-    `user.display_name` / `user.is_admin` once this stops returning the
-    placeholder.
-    """
-    return StubResponse(endpoint="GET /me")
+@router.get("/me", response_model=UserOut)
+async def me(user: Annotated[SessionUser, Depends(get_current_user)]) -> UserOut:
+    """Return current user display name and role derived from group claims."""
+    return UserOut(id=user.id, display_name=user.display_name, is_admin=user.is_admin)

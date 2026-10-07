@@ -18,6 +18,8 @@ OIDC_ISSUER = os.getenv("OIDC_ISSUER", "")
 OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID", "")
 OIDC_CLIENT_SECRET = os.getenv("OIDC_CLIENT_SECRET", "")
 OIDC_REDIRECT_URI = os.getenv("OIDC_REDIRECT_URI", "http://localhost:8000/auth/callback")
+# Where GET /auth/callback 302s the browser back to once a session exists.
+APP_BASE_URL = os.getenv("APP_BASE_URL", "/")
 
 # object_store: Amazon S3 (private bucket) -- original uploaded files.
 S3_BUCKET = os.getenv("S3_BUCKET", "")

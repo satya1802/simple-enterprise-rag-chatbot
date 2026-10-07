@@ -70,5 +70,9 @@ async def get_current_user(
     """
     user = read_session_cookie(session) if session else None
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": 'Bearer realm="auth"'},
+        )
     return user

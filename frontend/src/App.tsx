@@ -1,3 +1,4 @@
+import * as React from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 
 import SignIn from "@/screens/SignIn";
@@ -5,6 +6,7 @@ import Chat from "@/screens/Chat";
 import Documents from "@/screens/Documents";
 import GettingStarted from "@/screens/GettingStarted";
 import ApiReference from "@/screens/ApiReference";
+import { AuthProvider, useAuth } from "@/lib/auth";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -12,7 +14,36 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-[var(--brand-hover)] text-[var(--brand-fg)]" : "text-[var(--brand-fg-muted)]",
   ].join(" ");
 
-export default function App() {
+/** Guards /chat, /documents and any future upload route behind a live session. */
+function RequireAuth({ children }: { children: React.ReactElement }) {
+  const { status } = useAuth();
+  if (status === "loading") {
+    return (
+      <div className="p-6 text-sm" style={{ color: "var(--brand-fg-muted)" }}>
+        Checking your session…
+      </div>
+    );
+  }
+  if (status !== "authenticated") {
+    return <Navigate to="/sign-in" replace />;
+  }
+  return children;
+}
+
+function AccountChrome() {
+  const { status, user } = useAuth();
+  if (status !== "authenticated" || !user) return null;
+  return (
+    <p className="mb-4 px-3 text-xs" style={{ color: "var(--brand-fg-muted)" }}>
+      {"Signed in as "}
+      <span className="font-medium" style={{ color: "var(--brand-fg)" }}>
+        {user.display_name}
+      </span>
+    </p>
+  );
+}
+
+function AppShell() {
   return (
     <div className="flex min-h-screen">
       <aside
@@ -28,6 +59,7 @@ export default function App() {
         >
           {"Simple enterprise RAG chatbot"}
         </p>
+        <AccountChrome />
         <nav className="flex flex-col gap-1">
           <NavLink to="/sign-in" className={navLinkClass}>
             {"Sign in"}
@@ -49,13 +81,35 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         <Routes>
           <Route path="/sign-in" element={<SignIn />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/documents" element={<Documents />} />
+          <Route
+            path="/chat"
+            element={
+              <RequireAuth>
+                <Chat />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <RequireAuth>
+                <Documents />
+              </RequireAuth>
+            }
+          />
           <Route path="/getting-started" element={<GettingStarted />} />
           <Route path="/api-reference" element={<ApiReference />} />
           <Route path="*" element={<Navigate to="/sign-in" replace />} />
         </Routes>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }
