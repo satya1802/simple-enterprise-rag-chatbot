@@ -263,6 +263,10 @@ def process_document(document_id: str) -> None:
                 chunk_index=index,
                 content=chunk_text,
                 embedding=vector,
+                # Keyword-index data: a plain-text lexeme list is a valid
+                # TSVECTOR literal on Postgres and a usable ILIKE target on
+                # the portable SQLite fallback (see app.services.retrieval).
+                content_tsv=chunk_text,
                 metadata_={
                     "document_id": str(document.id),
                     "filename": document.filename,
