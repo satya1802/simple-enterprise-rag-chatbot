@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider } from "@/lib/auth";
 import Documents from "@/screens/Documents";
-import type { DocumentListResponse } from "@/lib/documents";
+import type { DocumentListResponse, ListDocumentsParams } from "@/lib/documents";
 
-const listDocuments = vi.fn<[], Promise<DocumentListResponse>>();
+const listDocuments = vi.fn<(params?: ListDocumentsParams) => Promise<DocumentListResponse>>();
 const deleteDocument = vi.fn().mockResolvedValue(undefined);
 const uploadDocuments = vi.fn();
 
@@ -16,8 +16,7 @@ vi.mock("@/lib/documents", async () => {
   return {
     ...actual,
     listDocuments: (...args: Parameters<typeof actual.listDocuments>) => listDocuments(...args),
-    deleteDocument: (...args: Parameters<typeof actual.deleteDocument>) =>
-      deleteDocument(...args),
+    deleteDocument: (...args: Parameters<typeof actual.deleteDocument>) => deleteDocument(...args),
     uploadDocuments: (...args: Parameters<typeof actual.uploadDocuments>) =>
       uploadDocuments(...args),
     documentFileUrl: (id: string) => `http://localhost:8000/documents/${id}/file`,
@@ -57,10 +56,7 @@ function doc(overrides: Partial<DocumentListResponse["items"][number]> = {}) {
 
 describe("Documents screen", () => {
   beforeEach(() => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(mockMe()),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockMe()));
   });
 
   afterEach(() => {
@@ -183,7 +179,12 @@ describe("Documents screen", () => {
     listDocuments
       .mockResolvedValueOnce({
         items: [
-          doc({ id: "f1", filename: "broken.pdf", status: "Failed", status_reason: "Parse error." }),
+          doc({
+            id: "f1",
+            filename: "broken.pdf",
+            status: "Failed",
+            status_reason: "Parse error.",
+          }),
         ],
         total: 1,
       })
