@@ -53,7 +53,9 @@ async function readJson<T>(response: Response, method: string, path: string): Pr
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
 }
 
-export async function listDocuments(params: ListDocumentsParams = {}): Promise<DocumentListResponse> {
+export async function listDocuments(
+  params: ListDocumentsParams = {},
+): Promise<DocumentListResponse> {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   search.set("page", String(params.page ?? 1));

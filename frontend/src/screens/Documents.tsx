@@ -189,7 +189,9 @@ export default function Screen() {
         setPage(targetPage);
       } catch (err) {
         if (await handle401(err)) return;
-        setLoadError("The knowledge base could not be loaded. Check your connection and try again.");
+        setLoadError(
+          "The knowledge base could not be loaded. Check your connection and try again.",
+        );
       } finally {
         setLoading(false);
       }
