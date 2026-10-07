@@ -161,9 +161,10 @@ export function streamAnswer(
           if (typeof parsed.stream_id === "string") streamId = parsed.stream_id;
 
           if (event === "token") {
-            if (typeof parsed.token === "string") {
+            // The backend's TokenEvent field is `delta`, not `token`.
+            if (typeof parsed.delta === "string") {
               resetIdleTimer();
-              handlers.onToken(parsed.token);
+              handlers.onToken(parsed.delta);
             }
           } else if (event === "done") {
             clearIdleTimer();

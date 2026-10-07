@@ -5,8 +5,15 @@ import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 import { useAuth } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 import { dedupeCitations, streamAnswer } from "@/lib/chat";
 import type { AnswerTerminal, Citation, StreamAnswerHandle, TokenUsage } from "@/lib/chat";
+import {
+  deleteConversation as deleteConversationApi,
+  getConversation,
+  listConversations,
+} from "@/lib/conversations";
+import type { ConversationSummary } from "@/lib/conversations";
 
 void UI;
 
@@ -47,8 +54,8 @@ type ErrorMessage = {
 
 type Message = UserMessage | AssistantMessage | ErrorMessage;
 
-type Conversation = {
-  id: string;
+type ActiveConversation = {
+  id: string | null;
   title: string;
   created_at: string;
   messages: Message[];
@@ -56,11 +63,14 @@ type Conversation = {
 
 type StreamState = {
   id: string;
-  convId: string;
+  convId: string | null;
   created_at: string;
   question: string;
   text: string;
 };
+
+type HistoryStatus = "loading" | "loaded" | "error";
+type ActiveStatus = "idle" | "loading" | "loaded" | "not-found" | "error";
 
 const BORDER = "#D8DEDA";
 const INK = "#16211D";
@@ -102,13 +112,31 @@ function fmtDay(iso: string): string {
 export default function Screen() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const [conversations, setConversations] = React.useState<Conversation[]>([]);
-  const [activeId, setActiveId] = React.useState<string | null>(null);
-  const [draft, setDraft] = React.useState("");
+
+  // History panel (AC-017): the fetched list is the only source of truth --
+  // nothing seeded, nothing synthesised client-side.
+  const [historyList, setHistoryList] = React.useState<ConversationSummary[]>([]);
+  const [historyStatus, setHistoryStatus] = React.useState<HistoryStatus>("loading");
   const [historyQuery, setHistoryQuery] = React.useState("");
+  const [deleteError, setDeleteError] = React.useState("");
+
+  // The open conversation. `activeId` is null for a brand-new conversation
+  // that has not been given a server id yet (the first answer in it is
+  // still streaming, or none has been asked); `activeMessages` holds its
+  // turns regardless of whether they came from GET /conversations/{id} or
+  // were just appended by `ask`.
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = React.useState<ActiveStatus>("idle");
+  const [activeMessages, setActiveMessages] = React.useState<Message[]>([]);
+  const [activeMeta, setActiveMeta] = React.useState<{
+    title: string | null;
+    created_at: string;
+  } | null>(null);
+
+  const [draft, setDraft] = React.useState("");
   const [stream, setStream] = React.useState<StreamState | null>(null);
   const [openSource, setOpenSource] = React.useState<Citation | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<Conversation | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<ConversationSummary | null>(null);
   const [announce, setAnnounce] = React.useState("");
 
   const seq = React.useRef(0);
@@ -124,13 +152,44 @@ export default function Screen() {
   const composerRef = React.useRef<HTMLTextAreaElement | null>(null);
   const streamHandleRef = React.useRef<StreamAnswerHandle | null>(null);
 
-  const activeConv = conversations.find((c) => c.id === activeId) || null;
   const isStreaming = stream !== null;
+
+  const activeConv: ActiveConversation | null =
+    activeStatus === "loaded" || activeMessages.length > 0
+      ? {
+          id: activeId,
+          title:
+            activeMeta?.title ||
+            (activeMessages[0] && activeMessages[0].role === "user"
+              ? titleFrom(activeMessages[0].content)
+              : "New conversation"),
+          created_at: activeMeta?.created_at ?? activeMessages[0]?.created_at ?? new Date().toISOString(),
+          messages: activeMessages,
+        }
+      : null;
+
+  const loadHistory = React.useCallback(async () => {
+    setHistoryStatus("loading");
+    try {
+      const list = await listConversations();
+      setHistoryList(list);
+      setHistoryStatus("loaded");
+    } catch {
+      setHistoryStatus("error");
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void loadHistory();
+    // Only ever this user's own conversations: no user id is ever read from
+    // the client and none is ever sent (AC-116) -- the backend scopes
+    // GET /conversations to the session's caller.
+  }, [loadHistory]);
 
   React.useEffect(() => {
     const el = transcriptRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [activeId, stream, conversations]);
+  }, [activeId, activeStatus, stream, activeMessages]);
 
   // Dialog: escape to close, focus trap between its two buttons.
   React.useEffect(() => {
@@ -158,10 +217,73 @@ export default function Screen() {
     return () => document.removeEventListener("keydown", onKey);
   }, [deleteTarget]);
 
-  function appendAssistantMessage(convId: string, msg: AssistantMessage | ErrorMessage) {
-    setConversations((prev) =>
-      prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, msg] } : c)),
-    );
+  // After a turn completes (answered, errored, or stopped), the backend has
+  // committed the user's message (and the conversation itself, if this was
+  // its first turn). Re-fetch the list so title/date/count stay accurate,
+  // and -- for a conversation that had no id yet -- adopt the most recently
+  // updated entry as the now-open conversation's id (AC-115).
+  async function syncAfterTurn(hadNoIdBeforeTurn: boolean) {
+    try {
+      const list = await listConversations();
+      setHistoryList(list);
+      setHistoryStatus("loaded");
+      if (hadNoIdBeforeTurn && list.length > 0) {
+        const newest = list[0];
+        setActiveId(newest.id);
+        setActiveMeta({ title: newest.title, created_at: newest.created_at });
+        setActiveStatus("loaded");
+      }
+    } catch {
+      // The turn itself already succeeded locally; a failed refresh just
+      // means the sidebar is stale until the next successful load.
+    }
+  }
+
+  async function selectConversation(id: string) {
+    if (isStreaming) return;
+    setActiveId(id);
+    setActiveStatus("loading");
+    setActiveMessages([]);
+    setActiveMeta(null);
+    setOpenSource(null);
+    try {
+      const detail = await getConversation(id);
+      if (!detail || !detail.id) {
+        setActiveStatus("not-found");
+        return;
+      }
+      const messages: Message[] = detail.messages.map((m, i) =>
+        m.role === "user"
+          ? {
+              id: id + "-m" + i,
+              role: "user",
+              content: m.content,
+              created_at: detail.created_at,
+            }
+          : {
+              id: id + "-m" + i,
+              role: "assistant",
+              content: m.content,
+              created_at: detail.updated_at,
+              citations: dedupeCitations(m.citations),
+              not_covered: m.citations.length === 0,
+              partial: false,
+              stopped: false,
+              token_usage: null,
+              feedback: null,
+            },
+      );
+      setActiveMeta({ title: detail.title, created_at: detail.created_at });
+      setActiveMessages(messages);
+      setActiveStatus("loaded");
+      setAnnounce("Opened conversation " + (detail.title || "untitled"));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setActiveStatus("not-found");
+      } else {
+        setActiveStatus("error");
+      }
+    }
   }
 
   function finishStream(result: AnswerTerminal, s: StreamState) {
@@ -177,7 +299,7 @@ export default function Screen() {
       token_usage: result.token_usage,
       feedback: null,
     };
-    appendAssistantMessage(s.convId, msg);
+    setActiveMessages((prev) => [...prev, msg]);
     setStream(null);
     streamHandleRef.current = null;
     if (msg.not_covered) {
@@ -186,6 +308,7 @@ export default function Screen() {
       setAnnounce("Answer complete with " + msg.citations.length + " source(s).");
       if (msg.citations.length) setOpenSource(msg.citations[0]);
     }
+    void syncAfterTurn(s.convId === null);
   }
 
   function failStream(message: string, s: StreamState) {
@@ -196,10 +319,11 @@ export default function Screen() {
       created_at: s.created_at,
       question: s.question,
     };
-    appendAssistantMessage(s.convId, msg);
+    setActiveMessages((prev) => [...prev, msg]);
     setStream(null);
     streamHandleRef.current = null;
     setAnnounce("The answer failed: " + message);
+    void syncAfterTurn(s.convId === null);
   }
 
   function ask(question: string) {
@@ -207,30 +331,15 @@ export default function Screen() {
     if (!q || isStreaming) return;
     const nowIso = new Date().toISOString();
     const userMsg: UserMessage = { id: uid("m"), role: "user", content: q, created_at: nowIso };
-    let convId = activeId;
-    if (!convId) {
-      convId = uid("c");
-      const conv: Conversation = {
-        id: convId,
-        title: titleFrom(q),
-        created_at: nowIso,
-        messages: [userMsg],
-      };
-      setConversations((prev) => [conv, ...prev]);
-      setActiveId(convId);
-    } else {
-      setConversations((prev) =>
-        prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, userMsg] } : c)),
-      );
-    }
+    const convIdAtStart = activeId;
+    setActiveMessages((prev) => [...prev, userMsg]);
     setDraft("");
     setAnnounce("Searching the knowledge base. Generating answer.");
 
     const streamId = uid("m");
-    const convIdForStream = convId;
     const newStream: StreamState = {
       id: streamId,
-      convId: convIdForStream,
+      convId: convIdAtStart,
       created_at: nowIso,
       question: q,
       text: "",
@@ -238,7 +347,7 @@ export default function Screen() {
     setStream(newStream);
 
     const handle = streamAnswer(
-      { question: q, conversationId: null },
+      { question: q, conversationId: convIdAtStart },
       {
         onToken: (token) => {
           setStream((s) => (s && s.id === streamId ? { ...s, text: s.text + token } : s));
@@ -262,8 +371,10 @@ export default function Screen() {
 
   async function stopGenerating() {
     const handle = streamHandleRef.current;
+    let hadNoId = false;
     setStream((s) => {
       if (!s) return s;
+      hadNoId = s.convId === null;
       const msg: AssistantMessage = {
         id: s.id,
         role: "assistant",
@@ -276,33 +387,52 @@ export default function Screen() {
         token_usage: null,
         feedback: null,
       };
-      appendAssistantMessage(s.convId, msg);
+      setActiveMessages((prev) => [...prev, msg]);
       setAnnounce("Generation stopped. The partial answer has been saved.");
       return null;
     });
     streamHandleRef.current = null;
     if (handle) await handle.stop();
+    void syncAfterTurn(hadNoId);
   }
 
   function startNewConversation() {
     if (isStreaming) return;
     setActiveId(null);
+    setActiveStatus("idle");
+    setActiveMessages([]);
+    setActiveMeta(null);
+    setOpenSource(null);
     setDraft("");
     setAnnounce("New conversation started. Earlier turns are no longer used as context.");
     if (composerRef.current) composerRef.current.focus();
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     const target = deleteTarget;
     if (!target) return;
-    setConversations((prev) => prev.filter((c) => c.id !== target.id));
-    if (activeId === target.id) setActiveId(null);
     setDeleteTarget(null);
-    setAnnounce("Conversation “" + target.title + "” deleted from your history.");
+    try {
+      await deleteConversationApi(target.id);
+      setHistoryList((prev) => prev.filter((c) => c.id !== target.id));
+      if (activeId === target.id) {
+        setActiveId(null);
+        setActiveStatus("idle");
+        setActiveMessages([]);
+        setActiveMeta(null);
+      }
+      setDeleteError("");
+      setAnnounce("Conversation “" + (target.title || "untitled") + "” deleted from your history.");
+    } catch {
+      setDeleteError("The conversation could not be deleted. Please try again.");
+      setAnnounce("The conversation could not be deleted. Please try again.");
+    }
   }
 
-  const filteredHistory = conversations.filter((c) =>
-    c.title.toLowerCase().includes(historyQuery.trim().toLowerCase()),
+  // Filters only the list this client already fetched for the signed-in
+  // user -- never a server-side search across other users (AC-116).
+  const filteredHistory = historyList.filter((c) =>
+    (c.title || "").toLowerCase().includes(historyQuery.trim().toLowerCase()),
   );
 
   function renderBody(text: string, key: string) {
@@ -334,20 +464,13 @@ export default function Screen() {
     );
   }
 
-  function Feedback({ convId, msg }: { convId: string; msg: AssistantMessage }) {
+  function Feedback({ msg }: { msg: AssistantMessage }) {
     const set = (rating: "up" | "down") => {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id !== convId
-            ? c
-            : {
-                ...c,
-                messages: c.messages.map((m) =>
-                  m.id === msg.id && m.role === "assistant"
-                    ? { ...m, feedback: m.feedback === rating ? null : rating }
-                    : m,
-                ),
-              },
+      setActiveMessages((prev) =>
+        prev.map((m) =>
+          m.id === msg.id && m.role === "assistant"
+            ? { ...m, feedback: m.feedback === rating ? null : rating }
+            : m,
         ),
       );
     };
@@ -451,8 +574,13 @@ export default function Screen() {
               Your conversations
             </h2>
             <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
-              {conversations.length} saved · visible only to you
+              {historyStatus === "loaded" ? historyList.length + " saved · visible only to you" : ""}
             </p>
+            {deleteError && (
+              <p role="alert" className="mt-2 text-xs font-medium" style={{ color: brand.accentColor }}>
+                {deleteError}
+              </p>
+            )}
             <div className="mt-3">
               <label
                 htmlFor="history-search"
@@ -482,7 +610,32 @@ export default function Screen() {
             </div>
           </div>
 
-          {conversations.length === 0 ? (
+          {historyStatus === "loading" ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm font-medium" style={{ color: INK }}>
+                Loading your conversations…
+              </p>
+            </div>
+          ) : historyStatus === "error" ? (
+            <div className="px-4 py-8 text-center">
+              <Icons.AlertCircle
+                className="mx-auto h-5 w-5"
+                aria-hidden="true"
+                style={{ color: brand.accentColor }}
+              />
+              <p className="mt-2 text-sm font-medium" style={{ color: INK }}>
+                Your conversations could not be loaded
+              </p>
+              <button
+                type="button"
+                onClick={() => void loadHistory()}
+                className={BTN + " mt-3 border bg-white px-3 py-1.5 text-xs"}
+                style={{ borderColor: BORDER, color: BODY_INK }}
+              >
+                Try again
+              </button>
+            </div>
+          ) : historyList.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <Icons.Clock
                 className="mx-auto h-5 w-5"
@@ -513,13 +666,11 @@ export default function Screen() {
                   <li key={c.id} className="flex items-stretch gap-1">
                     <button
                       type="button"
-                      onClick={() => {
-                        setActiveId(c.id);
-                        setAnnounce("Opened conversation " + c.title);
-                      }}
+                      onClick={() => void selectConversation(c.id)}
+                      disabled={isStreaming}
                       aria-current={isActive ? "true" : undefined}
                       className={
-                        "flex-1 rounded-[0.5rem] border-l-2 px-3 py-2 text-left hover:bg-[#F1F3F1] " +
+                        "flex-1 rounded-[0.5rem] border-l-2 px-3 py-2 text-left hover:bg-[#F1F3F1] disabled:opacity-50 " +
                         RING
                       }
                       style={{
@@ -533,7 +684,7 @@ export default function Screen() {
                         }
                         style={{ color: INK }}
                       >
-                        {c.title}
+                        {c.title || "Untitled conversation"}
                       </span>
                       <span className="mt-0.5 block text-xs" style={{ color: brand.neutralColor }}>
                         {fmtDay(c.created_at)} · {fmtTime(c.created_at)}
@@ -543,7 +694,7 @@ export default function Screen() {
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(c)}
-                      aria-label={"Delete conversation: " + c.title}
+                      aria-label={"Delete conversation: " + (c.title || "Untitled conversation")}
                       className={"rounded-[0.5rem] px-2 hover:bg-[#F6E9EA] " + RING}
                       style={{ color: brand.accentColor }}
                     >
@@ -568,18 +719,24 @@ export default function Screen() {
               className="text-base font-semibold"
               style={{ color: INK }}
             >
-              {activeConv ? activeConv.title : "New conversation"}
+              {activeStatus === "not-found"
+                ? "Conversation not found"
+                : activeConv
+                  ? activeConv.title
+                  : "New conversation"}
             </h2>
             <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
-              {activeConv
-                ? "Started " +
-                  fmtDay(activeConv.created_at) +
-                  " at " +
-                  fmtTime(activeConv.created_at) +
-                  " · " +
-                  activeConv.messages.length +
-                  " turns · follow-ups are read in context"
-                : "No earlier turns are used as context for your next question."}
+              {activeStatus === "not-found"
+                ? "It may have been deleted, or it never belonged to your account."
+                : activeConv
+                  ? "Started " +
+                    fmtDay(activeConv.created_at) +
+                    " at " +
+                    fmtTime(activeConv.created_at) +
+                    " · " +
+                    activeConv.messages.length +
+                    " turns · follow-ups are read in context"
+                  : "No earlier turns are used as context for your next question."}
             </p>
           </div>
 
@@ -590,7 +747,46 @@ export default function Screen() {
             tabIndex={0}
             className={"max-h-[34rem] flex-1 overflow-y-auto px-6 py-6 " + RING}
           >
-            {!activeConv || activeConv.messages.length === 0 ? (
+            {activeStatus === "loading" ? (
+              <div className="mx-auto max-w-xl py-10 text-center">
+                <p className="text-sm font-medium" style={{ color: INK }}>
+                  Loading conversation…
+                </p>
+              </div>
+            ) : activeStatus === "not-found" ? (
+              <div className="mx-auto max-w-xl py-10 text-center">
+                <Icons.AlertCircle
+                  className="mx-auto h-5 w-5"
+                  aria-hidden="true"
+                  style={{ color: brand.accentColor }}
+                />
+                <p className="mt-3 text-sm font-medium" style={{ color: INK }}>
+                  This conversation could not be found
+                </p>
+                <p className="mt-1 text-sm leading-6" style={{ color: brand.neutralColor }}>
+                  It may have been deleted, or the link no longer applies to your account.
+                </p>
+              </div>
+            ) : activeStatus === "error" ? (
+              <div className="mx-auto max-w-xl py-10 text-center">
+                <Icons.AlertCircle
+                  className="mx-auto h-5 w-5"
+                  aria-hidden="true"
+                  style={{ color: brand.accentColor }}
+                />
+                <p className="mt-3 text-sm font-medium" style={{ color: INK }}>
+                  This conversation could not be loaded
+                </p>
+                <button
+                  type="button"
+                  onClick={() => (activeId ? void selectConversation(activeId) : undefined)}
+                  className={BTN + " mt-3 border bg-white px-3 py-1.5 text-xs"}
+                  style={{ borderColor: BORDER, color: BODY_INK }}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : !activeConv || activeConv.messages.length === 0 ? (
               <div className="mx-auto max-w-xl py-4 text-center">
                 <div
                   className="mx-auto flex h-11 w-11 items-center justify-center rounded-full"
@@ -603,7 +799,7 @@ export default function Screen() {
                   />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold" style={{ color: INK }}>
-                  {conversations.length === 0
+                  {historyList.length === 0
                     ? "Welcome — ask our knowledge base anything"
                     : "Ask a question to start"}
                 </h3>
@@ -858,13 +1054,13 @@ export default function Screen() {
                         )}
 
                         <AssistantMeta msg={msg} />
-                        {!msg.stopped && <Feedback convId={activeConv.id} msg={msg} />}
+                        {!msg.stopped && <Feedback msg={msg} />}
                       </div>
                     </li>
                   );
                 })}
 
-                {stream && stream.convId === activeConv.id && (
+                {stream && (activeConv?.id ?? null) === stream.convId && (
                   <li>
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-semibold" style={{ color: brand.primaryColor }}>
@@ -1104,8 +1300,8 @@ export default function Screen() {
               Delete this conversation?
             </h2>
             <p id="delete-desc" className="mt-2 text-sm leading-6" style={{ color: BODY_INK }}>
-              “{deleteTarget.title}” will be removed from your history and will no longer appear in
-              your list. The documents it cited are not affected.
+              “{deleteTarget.title || "Untitled conversation"}” will be removed from your history
+              and will no longer appear in your list. The documents it cited are not affected.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button
@@ -1119,7 +1315,7 @@ export default function Screen() {
               </button>
               <button
                 type="button"
-                onClick={confirmDelete}
+                onClick={() => void confirmDelete()}
                 className={BTN + " px-4 py-2 text-white hover:opacity-90"}
                 style={{ backgroundColor: brand.accentColor }}
               >
