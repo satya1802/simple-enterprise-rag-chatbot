@@ -174,7 +174,14 @@ function AppShell() {
               </RequireAuth>
             }
           />
-          <Route path="/getting-started" element={<GettingStarted />} />
+          <Route
+            path="/getting-started"
+            element={
+              <RequireAuth>
+                <GettingStarted />
+              </RequireAuth>
+            }
+          />
           <Route path="/api-reference" element={<ApiReference />} />
           <Route path="*" element={<Navigate to="/sign-in" replace />} />
         </Routes>

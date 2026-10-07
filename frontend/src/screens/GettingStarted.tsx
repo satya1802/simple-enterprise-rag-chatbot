@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 
 import * as UI from "@/lib/ui";
@@ -6,8 +5,24 @@ import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 
-const { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Label, Checkbox, Table, THead, TBody, TR, TH, TD, Separator } = UI;
-const { Search, Check, X, ChevronRight, Users, FileText, Package, Clock, Download, Upload, ArrowRight, AlertCircle, CheckCircle } = Icons;
+const {
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Label,
+  Checkbox,
+  Table,
+  THead,
+  TBody,
+  TR,
+  TH,
+  TD,
+  Separator,
+} = UI;
 
 const GUIDE_SECTIONS = [
   {
@@ -15,28 +30,64 @@ const GUIDE_SECTIONS = [
     title: "How Evidence First works",
     summary:
       "Answers are built only from documents in the shared knowledge base, and every claim carries a citation you can open beside the answer.",
-    keywords: ["grounded", "retrieval", "hybrid search", "index", "corpus", "overview", "model", "tenant"],
+    keywords: [
+      "grounded",
+      "retrieval",
+      "hybrid search",
+      "index",
+      "corpus",
+      "overview",
+      "model",
+      "tenant",
+    ],
   },
   {
     id: "good-questions",
     title: "Ask a good question",
     summary:
       "Plain English, one topic at a time, and follow-ups that build on what you just asked.",
-    keywords: ["question box", "prompt", "follow-up", "examples", "wording", "keyword", "paraphrase"],
+    keywords: [
+      "question box",
+      "prompt",
+      "follow-up",
+      "examples",
+      "wording",
+      "keyword",
+      "paraphrase",
+    ],
   },
   {
     id: "citations",
     title: "Read and follow the citations",
     summary:
       "Clicking a citation opens the source passage in the evidence panel next to the answer instead of sending you to another tab.",
-    keywords: ["sources", "evidence panel", "proof", "verify", "open original", "download", "passage"],
+    keywords: [
+      "sources",
+      "evidence panel",
+      "proof",
+      "verify",
+      "open original",
+      "download",
+      "passage",
+    ],
   },
   {
     id: "upload",
     title: "Upload documents",
     summary:
       "PDF, DOCX, TXT and Markdown files are extracted, chunked, embedded and indexed automatically — usually within a few minutes.",
-    keywords: ["pdf", "docx", "txt", "markdown", "md", "file size", "processing", "ready", "failed", "indexing"],
+    keywords: [
+      "pdf",
+      "docx",
+      "txt",
+      "markdown",
+      "md",
+      "file size",
+      "processing",
+      "ready",
+      "failed",
+      "indexing",
+    ],
   },
   {
     id: "remove",
@@ -50,7 +101,17 @@ const GUIDE_SECTIONS = [
     title: "Limitations of release one",
     summary:
       "What the pilot deliberately does not do yet, stated plainly so the pilot is judged on what it actually promises.",
-    keywords: ["scanned pdf", "ocr", "confluence", "jira", "english", "shared", "private", "known issues", "refusal"],
+    keywords: [
+      "scanned pdf",
+      "ocr",
+      "confluence",
+      "jira",
+      "english",
+      "shared",
+      "private",
+      "known issues",
+      "refusal",
+    ],
   },
   {
     id: "help",
@@ -137,28 +198,23 @@ const DOC_STATUSES = [
 const LIMITATIONS = [
   {
     title: "Everything you upload is readable by every employee",
-    body:
-      "There is no private library and no way to mark a document personal or restricted. If content is confidential to a team or to an individual, it does not belong in the pilot corpus.",
+    body: "There is no private library and no way to mark a document personal or restricted. If content is confidential to a team or to an individual, it does not belong in the pilot corpus.",
   },
   {
     title: "Answers come only from uploaded documents",
-    body:
-      "Confluence pages and Jira issues are not connected yet. The citation format already carries source type, source identifier and source URL, so those connectors can be added later without reindexing — but today the corpus is upload-only.",
+    body: "Confluence pages and Jira issues are not connected yet. The citation format already carries source type, source identifier and source URL, so those connectors can be added later without reindexing — but today the corpus is upload-only.",
   },
   {
     title: "Scanned or image-only PDFs are not read",
-    body:
-      "There is no OCR in release one. Such a file indexes as 'No readable text' and tells you so rather than failing silently. Diagrams and screenshots inside a document are not interpreted.",
+    body: "There is no OCR in release one. Such a file indexes as 'No readable text' and tells you so rather than failing silently. Diagrams and screenshots inside a document are not interpreted.",
   },
   {
     title: "English only",
-    body:
-      "The interface, the content and the answers are English. Questions or documents in other languages are untested and are not a supported scenario for the pilot.",
+    body: "The interface, the content and the answers are English. Questions or documents in other languages are untested and are not a supported scenario for the pilot.",
   },
   {
     title: "It will say it does not know, rather than guess",
-    body:
-      "If retrieval finds nothing that supports an answer, you get an explicit 'not covered by the knowledge base' response with no citations — even for questions the underlying model could easily answer from general knowledge. That refusal is the feature, not a fault.",
+    body: "If retrieval finds nothing that supports an answer, you get an explicit 'not covered by the knowledge base' response with no citations — even for questions the underlying model could easily answer from general knowledge. That refusal is the feature, not a fault.",
   },
 ];
 
@@ -178,9 +234,7 @@ export default function Screen() {
   const q = query.trim().toLowerCase();
   const visibleSections = GUIDE_SECTIONS.filter((s) => {
     if (!q) return true;
-    return (s.title + " " + s.summary + " " + s.keywords.join(" "))
-      .toLowerCase()
-      .includes(q);
+    return (s.title + " " + s.summary + " " + s.keywords.join(" ")).toLowerCase().includes(q);
   });
 
   const doneCount = CHECKLIST.filter((c) => checked[c.id]).length;
@@ -208,10 +262,10 @@ export default function Screen() {
           <div className="space-y-5">
             <p className="text-[15px] leading-7 text-slate-700">
               Evidence First answers questions from one combined index of everything employees have
-              uploaded. When you ask something, the system searches that index two ways at once — exact
-              keyword matching for things like policy codes and project keys, and meaning-based matching
-              for when you describe something in your own words — then merges the results into a single
-              ranked set and writes the answer from those passages only.
+              uploaded. When you ask something, the system searches that index two ways at once —
+              exact keyword matching for things like policy codes and project keys, and
+              meaning-based matching for when you describe something in your own words — then merges
+              the results into a single ranked set and writes the answer from those passages only.
             </p>
             <p className="text-[15px] leading-7 text-slate-700">
               Nothing is sent to a public AI service. Your question, the retrieved passages and the
@@ -246,9 +300,10 @@ export default function Screen() {
         return (
           <div className="space-y-6">
             <p className="text-[15px] leading-7 text-slate-700">
-              Ask the way you would ask a well-informed colleague. One topic per question, with enough
-              detail to pin down which case you mean. You do not need to match the wording of the source
-              document — but if you know the exact term, policy code or project key, use it.
+              Ask the way you would ask a well-informed colleague. One topic per question, with
+              enough detail to pin down which case you mean. You do not need to match the wording of
+              the source document — but if you know the exact term, policy code or project key, use
+              it.
             </p>
 
             <div className="overflow-hidden rounded-lg border border-slate-200">
@@ -286,12 +341,15 @@ export default function Screen() {
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">Follow-ups are understood in context</h3>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Follow-ups are understood in context
+              </h3>
               <p className="mt-2 text-[15px] leading-7 text-slate-700">
-                Once you have an answer you can ask “who approves it?” or “and for contractors?” without
-                repeating yourself. The conversation is saved to your own history with a title taken from
-                your first question. Starting a new conversation clears that context so a new topic is not
-                confused with the old one. Only you can see your conversations.
+                Once you have an answer you can ask “who approves it?” or “and for contractors?”
+                without repeating yourself. The conversation is saved to your own history with a
+                title taken from your first question. Starting a new conversation clears that
+                context so a new topic is not confused with the old one. Only you can see your
+                conversations.
               </p>
             </div>
 
@@ -326,29 +384,26 @@ export default function Screen() {
         return (
           <div className="space-y-5">
             <p className="text-[15px] leading-7 text-slate-700">
-              Every substantive statement in an answer is attached to a source. When the answer finishes,
-              a citation list names each document it drew on — one entry per document, even if several
-              passages from it were used.
+              Every substantive statement in an answer is attached to a source. When the answer
+              finishes, a citation list names each document it drew on — one entry per document,
+              even if several passages from it were used.
             </p>
             <ul className="space-y-3">
               {[
                 {
                   icon: "FileText",
                   title: "Click a citation to see the passage",
-                  body:
-                    "The evidence panel on the right opens at the exact chunk the answer used, so you can check the wording without losing your place in the chat.",
+                  body: "The evidence panel on the right opens at the exact chunk the answer used, so you can check the wording without losing your place in the chat.",
                 },
                 {
                   icon: "Download",
                   title: "Open the original when you need full context",
-                  body:
-                    "From the evidence panel, 'Open original' fetches the stored file so you can read the whole document.",
+                  body: "From the evidence panel, 'Open original' fetches the stored file so you can read the whole document.",
                 },
                 {
                   icon: "AlertCircle",
                   title: "No citations means no answer",
-                  body:
-                    "If you see an answer with no sources listed, it is the 'not covered by the knowledge base' response. Treat anything uncited as not verified.",
+                  body: "If you see an answer with no sources listed, it is the 'not covered by the knowledge base' response. Treat anything uncited as not verified.",
                 },
               ].map((item) => (
                 <li key={item.title} className="flex gap-4 rounded-lg bg-slate-50 p-4">
@@ -361,8 +416,8 @@ export default function Screen() {
               ))}
             </ul>
             <p className="text-[15px] leading-7 text-slate-700">
-              If part of your question is covered and part is not, the answer says so explicitly: the
-              supported part is answered with citations, and the rest is named as not covered.
+              If part of your question is covered and part is not, the answer says so explicitly:
+              the supported part is answered with citations, and the rest is named as not covered.
             </p>
           </div>
         );
@@ -382,16 +437,16 @@ export default function Screen() {
                 Uploads are shared company-wide
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-700">
-                A document you add joins the shared knowledge base immediately. It is listed to every
-                employee, answerable to every employee, and deletable by every employee. Upload only
-                material that is safe for anyone in the company to read.
+                A document you add joins the shared knowledge base immediately. It is listed to
+                every employee, answerable to every employee, and deletable by every employee.
+                Upload only material that is safe for anyone in the company to read.
               </p>
             </div>
 
             <p className="text-[15px] leading-7 text-slate-700">
-              Drag files onto the knowledge base screen or use the file picker. You can select several at
-              once; each is tracked separately, so one rejected file does not hold up the others. The
-              maximum size is 25&nbsp;MB per file.
+              Drag files onto the knowledge base screen or use the file picker. You can select
+              several at once; each is tracked separately, so one rejected file does not hold up the
+              others. The maximum size is 25&nbsp;MB per file.
             </p>
 
             <div>
@@ -410,16 +465,18 @@ export default function Screen() {
                       <TH scope="row" className="font-medium text-slate-900">
                         {f.format}
                       </TH>
-                      <TD className="whitespace-nowrap font-mono text-[13px] text-slate-600">{f.ext}</TD>
+                      <TD className="whitespace-nowrap font-mono text-[13px] text-slate-600">
+                        {f.ext}
+                      </TD>
                       <TD className="text-slate-700">{f.note}</TD>
                     </TR>
                   ))}
                 </TBody>
               </Table>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Anything else — spreadsheets, slide decks, images, archives — is rejected before upload
-                with a message naming the file and the four supported formats. Nothing from a rejected
-                file reaches the index.
+                Anything else — spreadsheets, slide decks, images, archives — is rejected before
+                upload with a message naming the file and the four supported formats. Nothing from a
+                rejected file reaches the index.
               </p>
             </div>
 
@@ -447,31 +504,31 @@ export default function Screen() {
         return (
           <div className="space-y-5">
             <p className="text-[15px] leading-7 text-slate-700">
-              If something is wrong, out of date or should never have been shared, remove it. During the
-              pilot every signed-in employee can delete any document, including ones they did not upload —
-              there is no separate admin role yet.
+              If something is wrong, out of date or should never have been shared, remove it. During
+              the pilot every signed-in employee can delete any document, including ones they did
+              not upload — there is no separate admin role yet.
             </p>
             <ol className="space-y-3 text-[15px] leading-7 text-slate-700">
               <li className="rounded-lg bg-slate-50 p-4">
                 <span className="font-medium text-slate-900">1. Find it. </span>
-                On the knowledge base screen, filter the list by filename, then use the row menu and choose
-                Delete.
+                On the knowledge base screen, filter the list by filename, then use the row menu and
+                choose Delete.
               </li>
               <li className="rounded-lg bg-slate-50 p-4">
                 <span className="font-medium text-slate-900">2. Confirm. </span>
-                The dialog names the document and states that removal affects all employees. Cancelling
-                leaves the document and its index entries untouched.
+                The dialog names the document and states that removal affects all employees.
+                Cancelling leaves the document and its index entries untouched.
               </li>
               <li className="rounded-lg bg-slate-50 p-4">
                 <span className="font-medium text-slate-900">3. It is gone everywhere. </span>
-                The stored file, every chunk and every embedding are removed. Questions that relied on it
-                will return the 'not covered by the knowledge base' response unless another document covers
-                them.
+                The stored file, every chunk and every embedding are removed. Questions that relied
+                on it will return the 'not covered by the knowledge base' response unless another
+                document covers them.
               </li>
             </ol>
             <p className="text-[15px] leading-7 text-slate-700">
-              Each deletion writes an audit entry recording the document, who deleted it and when, so the
-              action is always traceable.
+              Each deletion writes an audit entry recording the document, who deleted it and when,
+              so the action is always traceable.
             </p>
             <Button
               type="button"
@@ -488,15 +545,12 @@ export default function Screen() {
         return (
           <div className="space-y-5">
             <p className="text-[15px] leading-7 text-slate-700">
-              Release one is deliberately narrow. These are the boundaries — please judge the pilot against
-              them rather than against what the product might become.
+              Release one is deliberately narrow. These are the boundaries — please judge the pilot
+              against them rather than against what the product might become.
             </p>
             <ul className="space-y-4">
               {LIMITATIONS.map((item) => (
-                <li
-                  key={item.title}
-                  className="rounded-lg border border-slate-200 bg-white p-5"
-                >
+                <li key={item.title} className="rounded-lg border border-slate-200 bg-white p-5">
                   <h3 className="flex items-start gap-2 text-sm font-semibold text-slate-900">
                     <Icons.AlertCircle
                       className="mt-0.5 h-4 w-4 shrink-0"
@@ -516,9 +570,9 @@ export default function Screen() {
         return (
           <div className="space-y-5">
             <p className="text-[15px] leading-7 text-slate-700">
-              The pilot runs to 18 December 2026. Tell us when an answer is wrong, unsupported or missing a
-              source — a thumbs-down on an answer is the fastest way to flag it, and the comment box
-              attached to it goes straight to the pilot team.
+              The pilot runs to 18 December 2026. Tell us when an answer is wrong, unsupported or
+              missing a source — a thumbs-down on an answer is the fastest way to flag it, and the
+              comment box attached to it goes straight to the pilot team.
             </p>
             <dl className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -538,17 +592,21 @@ export default function Screen() {
               <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <dt className="text-sm font-semibold text-slate-900">Sign-in problems</dt>
                 <dd className="mt-1 text-sm leading-6 text-slate-700">
-                  Access uses your corporate account. If you see “sign-in failed”, contact the IT service
-                  desk on extension 4400.
+                  Access uses your corporate account. If you see “sign-in failed”, contact the IT
+                  service desk on extension 4400.
                 </dd>
               </div>
             </dl>
             <p className="text-[15px] leading-7 text-slate-700">
-              Building something that needs answers? The answer engine is its own authenticated API, so a
-              Teams or Slack front end can call it without rebuilding retrieval or grounding.
+              Building something that needs answers? The answer engine is its own authenticated API,
+              so a Teams or Slack front end can call it without rebuilding retrieval or grounding.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button type="button" onClick={() => navigate("api-reference")} className="inline-flex items-center gap-2">
+              <Button
+                type="button"
+                onClick={() => navigate("api-reference")}
+                className="inline-flex items-center gap-2"
+              >
                 <Icons.FileText className="h-4 w-4" aria-hidden="true" />
                 Read the API reference
               </Button>
@@ -586,15 +644,19 @@ export default function Screen() {
           Getting started with Evidence First
         </h1>
         <p className="mt-4 text-lg leading-8 text-slate-700">
-          Five minutes of reading. Evidence First answers questions from documents your colleagues have
-          uploaded — and shows you the passage behind every claim, so you never have to take an answer on
-          trust.
+          Five minutes of reading. Evidence First answers questions from documents your colleagues
+          have uploaded — and shows you the passage behind every claim, so you never have to take an
+          answer on trust.
         </p>
         <p className="mt-4 text-sm text-slate-600">
           Release 1.0 (pilot) · Updated 2 October 2026 · About 5 minutes to read
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button type="button" onClick={() => navigate("chat")} className="inline-flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => navigate("chat")}
+            className="inline-flex items-center gap-2"
+          >
             <Icons.ArrowRight className="h-4 w-4" aria-hidden="true" />
             Ask your first question
           </Button>
@@ -734,8 +796,8 @@ export default function Screen() {
                 Nothing in the guide matches “{query.trim()}”
               </h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-                Try a broader word such as “upload”, “citation” or “limitations” — or ask the chatbot
-                directly and see whether the knowledge base covers it.
+                Try a broader word such as “upload”, “citation” or “limitations” — or ask the
+                chatbot directly and see whether the knowledge base covers it.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Button type="button" variant="outline" onClick={() => setQuery("")}>
