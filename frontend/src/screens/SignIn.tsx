@@ -147,9 +147,7 @@ export default function Screen() {
                     <Icons.CheckCircle className="h-5 w-5" aria-hidden="true" />
                     Session established
                   </h3>
-                  <p className="mt-4 text-sm font-semibold text-slate-900">
-                    {user.display_name}
-                  </p>
+                  <p className="mt-4 text-sm font-semibold text-slate-900">{user.display_name}</p>
                   {user.is_admin ? (
                     <p className="mt-0.5 text-xs" style={{ color: brand.neutralColor }}>
                       Knowledge base admin

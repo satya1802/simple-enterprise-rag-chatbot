@@ -14,7 +14,8 @@ from typing import Annotated
 from urllib.parse import urlencode
 
 import httpx
-from authlib.jose import JsonWebKey, jwt as jose_jwt
+from authlib.jose import JsonWebKey
+from authlib.jose import jwt as jose_jwt
 from authlib.jose.errors import JoseError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse

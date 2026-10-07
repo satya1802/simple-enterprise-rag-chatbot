@@ -34,7 +34,10 @@ describe("SignIn", () => {
   });
 
   it("shows a loading state while GET /me is in flight", () => {
-    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
     renderSignIn();
     expect(screen.getByText(/Checking your session/i)).toBeInTheDocument();
   });

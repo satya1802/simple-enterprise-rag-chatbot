@@ -129,10 +129,7 @@ function AppShell() {
         }}
       >
         <div className="mb-4 flex items-center justify-between gap-2 px-3">
-          <p
-            className="text-sm font-semibold"
-            style={{ fontFamily: "var(--brand-font-heading)" }}
-          >
+          <p className="text-sm font-semibold" style={{ fontFamily: "var(--brand-font-heading)" }}>
             {"Simple enterprise RAG chatbot"}
           </p>
           <button
