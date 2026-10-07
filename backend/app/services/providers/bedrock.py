@@ -67,8 +67,7 @@ class BedrockProvider(ModelProvider):
         extra_allowed = {h.strip() for h in allowed_hosts.split(",") if h.strip()}
         if not _is_allowlisted_host(host, region, extra_allowed):
             raise RuntimeError(
-                f"refusing to initialise the Bedrock adapter against non-allowlisted "
-                f"host {host!r}"
+                f"refusing to initialise the Bedrock adapter against non-allowlisted host {host!r}"
             )
 
         self._client = boto3.client(
