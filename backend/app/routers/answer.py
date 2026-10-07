@@ -46,8 +46,8 @@ from app.schemas import (
     AnswerRequest,
     AnswerResult,
     ErrorEvent,
-    StopRequest,
     StoppedEvent,
+    StopRequest,
     TokenEvent,
 )
 from app.services.providers import get_provider
