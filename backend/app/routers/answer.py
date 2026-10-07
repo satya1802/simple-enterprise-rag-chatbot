@@ -31,6 +31,7 @@ import threading
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -105,6 +106,19 @@ def _dedupe_citations(results: list[ScoredChunk]) -> list[ScoredChunk]:
         seen_document_ids.add(scored.document.id)
         deduped.append(scored)
     return deduped
+
+
+def _derive_title(question: str) -> str:
+    """The auto-generated title for a brand-new conversation (AC: US-016-1).
+
+    Trimmed of surrounding whitespace and capped at 60 characters, derived
+    only from the first user question -- never touched again after a
+    conversation already has one.
+    """
+    title = question.strip()
+    if len(title) > 60:
+        title = title[:60].rstrip()
+    return title or "New conversation"
 
 
 def _citation_source_url(document: Document) -> str | None:
@@ -330,10 +344,14 @@ async def answer(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
             )
     else:
-        conversation = Conversation(user_id=user_id)
+        # The first user question of a brand-new conversation is also its
+        # title (trimmed, <=60 chars): titled once, here, at creation --
+        # subsequent turns on this same conversation_id never touch title.
+        conversation = Conversation(user_id=user_id, title=_derive_title(body.question))
         db.add(conversation)
         db.flush()
 
+    conversation.updated_at = datetime.utcnow()
     db.add(Message(conversation_id=conversation.id, role="user", content=body.question))
     db.commit()
 

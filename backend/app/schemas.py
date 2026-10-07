@@ -103,11 +103,13 @@ class MessageOut(BaseModel):
 
 
 class ConversationSummary(BaseModel):
-    """One entry of GET /conversations."""
+    """One entry of GET /conversations, and the POST /conversations response."""
 
     id: str
     title: str | None = None
     created_at: datetime
+    updated_at: datetime
+    message_count: int = 0
 
 
 class ConversationDetail(BaseModel):
@@ -115,6 +117,8 @@ class ConversationDetail(BaseModel):
 
     id: str
     title: str | None = None
+    created_at: datetime
+    updated_at: datetime
     messages: list[MessageOut] = []
 
 
