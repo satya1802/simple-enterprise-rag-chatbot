@@ -82,7 +82,9 @@ _stream_registry_lock = threading.Lock()
 _stream_registry: dict[str, dict] = {}
 
 
-def _build_messages(question: str, results: list[ScoredChunk], partial: bool) -> list[dict[str, str]]:
+def _build_messages(
+    question: str, results: list[ScoredChunk], partial: bool
+) -> list[dict[str, str]]:
     context = "\n\n".join(
         f"[{index + 1}] {scored.chunk.content}" for index, scored in enumerate(results)
     )

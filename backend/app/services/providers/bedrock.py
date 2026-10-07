@@ -144,7 +144,9 @@ class BedrockProvider(ModelProvider):
             if delta:
                 yield StreamChunk(delta=delta)
 
-        yield StreamChunk(done=True, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
+        yield StreamChunk(
+            done=True, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens
+        )
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not self._embedding_model_id:

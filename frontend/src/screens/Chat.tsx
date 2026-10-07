@@ -400,8 +400,8 @@ export default function Screen() {
           </h1>
           <p className="mt-2 text-sm leading-6" style={{ color: brand.neutralColor }}>
             Answers are built only from documents in the shared knowledge base. Every claim carries
-            a citation you can open beside the answer — and when nothing supports your question,
-            the assistant says so instead of guessing.
+            a citation you can open beside the answer — and when nothing supports your question, the
+            assistant says so instead of guessing.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

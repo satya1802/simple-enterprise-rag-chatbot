@@ -8,7 +8,12 @@ import Chat from "@/screens/Chat";
 import type { AnswerTerminal, Citation, StreamAnswerHandlers } from "@/lib/chat";
 
 const streamAnswer =
-  vi.fn<(params: { question: string; conversationId?: string | null }, handlers: StreamAnswerHandlers) => { stop: () => Promise<void> }>();
+  vi.fn<
+    (
+      params: { question: string; conversationId?: string | null },
+      handlers: StreamAnswerHandlers,
+    ) => { stop: () => Promise<void> }
+  >();
 
 vi.mock("@/lib/chat", async () => {
   const actual = await vi.importActual<typeof import("@/lib/chat")>("@/lib/chat");
