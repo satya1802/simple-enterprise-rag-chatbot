@@ -8,7 +8,7 @@ OpenAPI document and passes its tests before a single handler is implemented.
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import models  # noqa: F401 -- imported so the tables register before create_all
@@ -44,6 +44,21 @@ app.add_middleware(
 # The scaffold ships no migrations, so the tables are created from the models on
 # startup. Replace this with Alembic before anything holds data worth keeping.
 Base.metadata.create_all(bind=engine)
+
+@app.middleware("http")
+async def _no_store_cache_headers(request: Request, call_next):
+    """Every response is marked uncacheable.
+
+    Sign-out must not leave previously fetched conversation content
+    reachable via browser back/forward cache, so every response -- not just
+    a hand-picked subset of "content" routes -- gets Cache-Control: no-store
+    and Pragma: no-cache (AC-002).
+    """
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
 
 app.include_router(auth.router)
 app.include_router(users.router)

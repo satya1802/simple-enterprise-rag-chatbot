@@ -32,15 +32,25 @@ function RequireAuth({ children }: { children: React.ReactElement }) {
 }
 
 function AccountChrome() {
-  const { status, user } = useAuth();
+  const { status, user, signOut } = useAuth();
   if (status !== "authenticated" || !user) return null;
   return (
-    <p className="mb-4 px-3 text-xs" style={{ color: "var(--brand-fg-muted)" }}>
-      {"Signed in as "}
-      <span className="font-medium" style={{ color: "var(--brand-fg)" }}>
-        {user.display_name}
-      </span>
-    </p>
+    <div className="mb-4 px-3 text-xs" style={{ color: "var(--brand-fg-muted)" }}>
+      <p>
+        {"Signed in as "}
+        <span className="font-medium" style={{ color: "var(--brand-fg)" }}>
+          {user.display_name}
+        </span>
+      </p>
+      <button
+        type="button"
+        onClick={() => void signOut()}
+        className="mt-2 rounded-[var(--brand-radius)] px-2 py-1 text-xs font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+        style={{ color: "var(--brand-fg)" }}
+      >
+        {"Sign out"}
+      </button>
+    </div>
   );
 }
 

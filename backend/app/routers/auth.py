@@ -29,6 +29,7 @@ from app.config import (
     OIDC_CLIENT_SECRET,
     OIDC_ISSUER,
     OIDC_REDIRECT_URI,
+    SESSION_LIFETIME_SECONDS,
     SESSION_SECRET,
 )
 from app.database import get_db
@@ -202,7 +203,7 @@ async def callback(
         cookie_value,
         httponly=True,
         samesite="lax",
-        max_age=8 * 60 * 60,
+        max_age=SESSION_LIFETIME_SECONDS,
     )
     return response
 
@@ -216,5 +217,9 @@ async def logout(user: Annotated[SessionUser, Depends(get_current_user)]) -> Res
     other stubs do.
     """
     response = Response(status_code=204)
-    response.delete_cookie(SESSION_COOKIE_NAME)
+    response.delete_cookie(
+        SESSION_COOKIE_NAME,
+        httponly=True,
+        samesite="lax",
+    )
     return response

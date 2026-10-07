@@ -7,8 +7,15 @@
  * state, and give screens a single place to kick off `/auth/login`.
  */
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 
-import { API_BASE_URL, ApiError, apiFetch } from "@/lib/api";
+import {
+  API_BASE_URL,
+  ApiError,
+  apiFetch,
+  setUnauthorizedHandler,
+  signOut as apiSignOut,
+} from "@/lib/api";
 
 export interface SessionUser {
   id: string;
@@ -25,6 +32,13 @@ export interface AuthContextValue {
   refresh: () => Promise<void>;
   /** Start the real SSO round trip: a full navigation to the backend. */
   beginSignIn: () => void;
+  /**
+   * Sign out of the current session (AC-002). Always clears the auth
+   * context's user, regardless of whether the server call succeeds, and
+   * navigates to the signed-out landing page with history replace so the
+   * browser back button cannot return to authenticated content.
+   */
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
@@ -32,6 +46,7 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = React.useState<AuthStatus>("loading");
   const [user, setUser] = React.useState<SessionUser | null>(null);
+  const navigate = useNavigate();
 
   const refresh = React.useCallback(async () => {
     setStatus("loading");
@@ -53,13 +68,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
+  const handleUnauthorized = React.useCallback(() => {
+    setUser(null);
+    setStatus("unauthenticated");
+    navigate("/sign-in", { replace: true });
+  }, [navigate]);
+
+  // Only hook into the shared 401 handler while a session is live (AC-069).
+  // Public screens probe /me on mount too; a 401 there just means "not
+  // signed in yet" and must not redirect a visitor away from an unguarded
+  // page like Getting started.
+  React.useEffect(() => {
+    if (status !== "authenticated") return undefined;
+    setUnauthorizedHandler(handleUnauthorized);
+    return () => setUnauthorizedHandler(null);
+  }, [status, handleUnauthorized]);
+
   const beginSignIn = React.useCallback(() => {
     window.location.href = `${API_BASE_URL}/auth/login`;
   }, []);
 
+  const signOut = React.useCallback(async () => {
+    await apiSignOut();
+    setUser(null);
+    setStatus("unauthenticated");
+    navigate("/sign-in", { replace: true });
+  }, [navigate]);
+
   const value = React.useMemo<AuthContextValue>(
-    () => ({ status, user, refresh, beginSignIn }),
-    [status, user, refresh, beginSignIn],
+    () => ({ status, user, refresh, beginSignIn, signOut }),
+    [status, user, refresh, beginSignIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

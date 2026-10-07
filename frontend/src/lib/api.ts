@@ -27,6 +27,20 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Shared 401 hook (AC-069). `AuthProvider` registers a handler here while the
+ * session is authenticated, so any screen's API call that comes back 401
+ * (session expired server-side) can flip the auth context to
+ * "unauthenticated" and redirect to sign-in -- regardless of which screen
+ * made the call.
+ */
+type UnauthorizedHandler = () => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler;
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -37,10 +51,27 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   if (!response.ok) {
+    if (response.status === 401) {
+      unauthorizedHandler?.();
+    }
     throw new ApiError(
       response.status,
       `${init?.method ?? "GET"} ${path} failed: ${response.status}`,
     );
   }
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+}
+
+/**
+ * POST /auth/logout. Sign-out must never leave content on screen, so a
+ * network failure or a non-204 response here is swallowed -- the caller
+ * (`AuthProvider.signOut`) always proceeds to clear client state and
+ * navigate to the signed-out page regardless of this outcome.
+ */
+export async function signOut(): Promise<void> {
+  try {
+    await apiFetch<void>("/auth/logout", { method: "POST" });
+  } catch {
+    // intentionally ignored -- see doc comment above
+  }
 }

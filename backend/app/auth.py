@@ -14,10 +14,9 @@ from dataclasses import dataclass, field
 from fastapi import Cookie, HTTPException, status
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-from app.config import SESSION_SECRET
+from app.config import SESSION_LIFETIME_SECONDS, SESSION_SECRET
 
 SESSION_COOKIE_NAME = "session"
-_SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
 
 _serializer = URLSafeTimedSerializer(SESSION_SECRET)
 
@@ -53,7 +52,7 @@ def create_session_cookie(user: SessionUser) -> str:
 def read_session_cookie(token: str) -> SessionUser | None:
     """Verify and unsign a session cookie, or `None` if it is missing/bad."""
     try:
-        data = _serializer.loads(token, max_age=_SESSION_MAX_AGE_SECONDS)
+        data = _serializer.loads(token, max_age=SESSION_LIFETIME_SECONDS)
     except (BadSignature, SignatureExpired):
         return None
     return SessionUser(**data)

@@ -18,6 +18,11 @@ OIDC_ISSUER = os.getenv("OIDC_ISSUER", "")
 OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID", "")
 OIDC_CLIENT_SECRET = os.getenv("OIDC_CLIENT_SECRET", "")
 OIDC_REDIRECT_URI = os.getenv("OIDC_REDIRECT_URI", "http://localhost:8000/auth/callback")
+# How long a signed session cookie (and the token inside it) is valid for,
+# in seconds. Single source of truth for both the itsdangerous max_age used
+# to verify the cookie (app.auth) and the Set-Cookie max_age set on
+# /auth/callback -- no 8-hour literal is hard-coded anywhere else.
+SESSION_LIFETIME_SECONDS = int(os.getenv("SESSION_LIFETIME_SECONDS", str(8 * 60 * 60)))
 # Where GET /auth/callback 302s the browser back to once a session exists.
 APP_BASE_URL = os.getenv("APP_BASE_URL", "/")
 
