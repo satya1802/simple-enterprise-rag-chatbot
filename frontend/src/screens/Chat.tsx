@@ -7,7 +7,22 @@ import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 
 const { Select } = UI;
-const { Plus, Search, Check, X, ChevronRight, FileText, Package, Calendar, Clock, Trash, Download, ArrowRight, AlertCircle, CheckCircle } = Icons;
+const {
+  Plus,
+  Search,
+  Check,
+  X,
+  ChevronRight,
+  FileText,
+  Package,
+  Calendar,
+  Clock,
+  Trash,
+  Download,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle,
+} = Icons;
 
 const DOCS = {
   d1: {
@@ -105,8 +120,7 @@ const ANSWERS = {
     token_usage: 1284,
     not_covered: false,
     partial: false,
-    text:
-      "Expense claims are governed by policy FIN-2024-07. A claim must be submitted within 30 days of the date the spend was incurred, and anything above €500 needs line-manager approval before Finance Shared Services will process it [1].\n\nDomestic per diem is €46 for a full day and €23 for a part day. Approved claims are paid in the next payroll run, and the payroll cut-off is the 18th of each month [2].",
+    text: "Expense claims are governed by policy FIN-2024-07. A claim must be submitted within 30 days of the date the spend was incurred, and anything above €500 needs line-manager approval before Finance Shared Services will process it [1].\n\nDomestic per diem is €46 for a full day and €23 for a part day. Approved claims are paid in the next payroll run, and the payroll cut-off is the 18th of each month [2].",
     citations: [
       {
         document_id: "d1",
@@ -126,8 +140,7 @@ const ANSWERS = {
     token_usage: 1102,
     not_covered: false,
     partial: false,
-    text:
-      "Contractors engaged through an agency claim expenses through their agency and not through the company expense system. Directly contracted specialists may claim pre-approved travel only, and the approval has to be recorded on the statement of work before the travel is booked [1].\n\nWhere a direct contractor does claim, the €500 manager-approval threshold in FIN-2024-07 applies to them in exactly the same way as to employees [2].",
+    text: "Contractors engaged through an agency claim expenses through their agency and not through the company expense system. Directly contracted specialists may claim pre-approved travel only, and the approval has to be recorded on the statement of work before the travel is booked [1].\n\nWhere a direct contractor does claim, the €500 manager-approval threshold in FIN-2024-07 applies to them in exactly the same way as to employees [2].",
     citations: [
       {
         document_id: "d6",
@@ -147,8 +160,7 @@ const ANSWERS = {
     token_usage: 965,
     not_covered: false,
     partial: false,
-    text:
-      "You give at least 10 weeks' written notice before parental leave starts, addressed to your line manager and to People Operations [1]. The notice period drops to 4 weeks for an adoption placement confirmed at short notice [1].\n\nLeave is recorded in Workday before it is approved, and any holiday already booked inside the leave window has to be rescheduled by the employee [1].",
+    text: "You give at least 10 weeks' written notice before parental leave starts, addressed to your line manager and to People Operations [1]. The notice period drops to 4 weeks for an adoption placement confirmed at short notice [1].\n\nLeave is recorded in Workday before it is approved, and any holiday already booked inside the leave window has to be rescheduled by the employee [1].",
     citations: [
       {
         document_id: "d3",
@@ -162,8 +174,7 @@ const ANSWERS = {
     token_usage: 1340,
     not_covered: false,
     partial: false,
-    text:
-      "The Q4 change freeze runs from 18 December 2026 to 2 January 2027 inclusive, and no production deployments are made in that window. An exception needs a severity-1 justification signed off by the on-call engineering manager and recorded against the release ticket before the deploy runs [1].\n\nThe standard release train is unaffected up to 17 December; the last scheduled production deploy of the year is at 14:00 UTC on 17 December [2].",
+    text: "The Q4 change freeze runs from 18 December 2026 to 2 January 2027 inclusive, and no production deployments are made in that window. An exception needs a severity-1 justification signed off by the on-call engineering manager and recorded against the release ticket before the deploy runs [1].\n\nThe standard release train is unaffected up to 17 December; the last scheduled production deploy of the year is at 14:00 UTC on 17 December [2].",
     citations: [
       {
         document_id: "d4",
@@ -183,8 +194,7 @@ const ANSWERS = {
     token_usage: 1190,
     not_covered: false,
     partial: false,
-    text:
-      "A severity 1 is declared when a customer-facing service is unavailable, or when the integrity of customer data is at risk [1].\n\nDeclaring it pages the on-call platform engineer and the duty incident commander immediately. The security lead is paged in parallel whenever the incident involves suspected data exposure, and the first stakeholder status update is due within 30 minutes of declaration [1].",
+    text: "A severity 1 is declared when a customer-facing service is unavailable, or when the integrity of customer data is at risk [1].\n\nDeclaring it pages the on-call platform engineer and the duty incident commander immediately. The security lead is paged in parallel whenever the incident involves suspected data exposure, and the first stakeholder status update is due within 30 minutes of declaration [1].",
     citations: [
       {
         document_id: "d5",
@@ -198,8 +208,7 @@ const ANSWERS = {
     token_usage: 880,
     not_covered: false,
     partial: false,
-    text:
-      "A new starter's laptop is ordered by the hiring manager at least five working days before the start date, and the build is collected from the Service Desk on day one with the starter present for the hand-over [1].\n\nAccounts, MFA enrolment and the security-awareness module are all completed on day one before any system access is granted [1].",
+    text: "A new starter's laptop is ordered by the hiring manager at least five working days before the start date, and the build is collected from the Service Desk on day one with the starter present for the hand-over [1].\n\nAccounts, MFA enrolment and the security-awareness module are all completed on day one before any system access is granted [1].",
     citations: [
       {
         document_id: "d7",
@@ -213,8 +222,7 @@ const ANSWERS = {
     token_usage: 1022,
     not_covered: false,
     partial: true,
-    text:
-      "New starters request VPN access through the IT onboarding checklist: the line manager raises the request on the starter's first day, and access is granted once the security-awareness module has been completed [1].\n\nOne part of your question is not covered by the knowledge base. No indexed document describes the split-tunnelling configuration or the per-region VPN gateways, so I cannot answer that part.",
+    text: "New starters request VPN access through the IT onboarding checklist: the line manager raises the request on the starter's first day, and access is granted once the security-awareness module has been completed [1].\n\nOne part of your question is not covered by the knowledge base. No indexed document describes the split-tunnelling configuration or the per-region VPN gateways, so I cannot answer that part.",
     citations: [
       {
         document_id: "d7",
@@ -231,18 +239,29 @@ const NOT_COVERED = {
   not_covered: true,
   partial: false,
   citations: [],
-  text:
-    "I can't answer this from the knowledge base.\n\nNothing in the indexed documents covers this question, so I won't answer from the model's general knowledge. Try rephrasing it using the wording that appears in the source document, or add a document that covers it from the Knowledge base screen.",
+  text: "I can't answer this from the knowledge base.\n\nNothing in the indexed documents covers this question, so I won't answer from the model's general knowledge. Try rephrasing it using the wording that appears in the source document, or add a document that covers it from the Knowledge base screen.",
 };
 
 const MATCHERS = [
   { keys: ["contractor", "contractors", "agency", "freelance"], answer: ANSWERS.contractors },
-  { keys: ["expense", "expenses", "claim", "per diem", "reimburs", "fin-2024", "travel"], answer: ANSWERS.expenses },
+  {
+    keys: ["expense", "expenses", "claim", "per diem", "reimburs", "fin-2024", "travel"],
+    answer: ANSWERS.expenses,
+  },
   { keys: ["parental", "leave", "maternity", "absence", "notice period"], answer: ANSWERS.leave },
-  { keys: ["freeze", "release", "deploy", "deployment", "release train", "q4"], answer: ANSWERS.release },
-  { keys: ["severity", "sev1", "incident", "paged", "page", "breach", "outage"], answer: ANSWERS.incident },
+  {
+    keys: ["freeze", "release", "deploy", "deployment", "release train", "q4"],
+    answer: ANSWERS.release,
+  },
+  {
+    keys: ["severity", "sev1", "incident", "paged", "page", "breach", "outage"],
+    answer: ANSWERS.incident,
+  },
   { keys: ["vpn", "remote access", "split tunnel"], answer: ANSWERS.vpn },
-  { keys: ["laptop", "onboarding", "new starter", "device", "equipment"], answer: ANSWERS.onboarding },
+  {
+    keys: ["laptop", "onboarding", "new starter", "device", "equipment"],
+    answer: ANSWERS.onboarding,
+  },
 ];
 
 const SUGGESTIONS = [
@@ -252,7 +271,34 @@ const SUGGESTIONS = [
   "What triggers a severity 1 incident?",
 ];
 
-const SEED_CONVERSATIONS = [
+type Citation = {
+  document_id: string;
+  chunk_index: number;
+  quote: string;
+};
+
+type Message = {
+  id: string;
+  role: string;
+  content?: string;
+  created_at: string;
+  feedback?: string | null;
+  token_usage?: number;
+  not_covered?: boolean;
+  partial?: boolean;
+  stopped?: boolean;
+  citations?: Citation[];
+  text?: string;
+};
+
+type Conversation = {
+  id: string;
+  title: string;
+  created_at: string;
+  messages: Message[];
+};
+
+const SEED_CONVERSATIONS: Conversation[] = [
   {
     id: "c-1",
     title: "Expense claim deadline and approval limits",
@@ -261,7 +307,8 @@ const SEED_CONVERSATIONS = [
       {
         id: "m-1",
         role: "user",
-        content: "What's the deadline for submitting an expense claim, and when do I need approval?",
+        content:
+          "What's the deadline for submitting an expense claim, and when do I need approval?",
         created_at: "2026-10-06T09:12:00",
       },
       {
@@ -297,7 +344,13 @@ const SEED_CONVERSATIONS = [
         content: "When is the Q4 release freeze and who can approve an exception?",
         created_at: "2026-10-05T16:40:00",
       },
-      { id: "m-6", role: "assistant", created_at: "2026-10-05T16:40:00", feedback: null, ...ANSWERS.release },
+      {
+        id: "m-6",
+        role: "assistant",
+        created_at: "2026-10-05T16:40:00",
+        feedback: null,
+        ...ANSWERS.release,
+      },
     ],
   },
   {
@@ -311,7 +364,13 @@ const SEED_CONVERSATIONS = [
         content: "How far in advance do I have to tell my manager about parental leave?",
         created_at: "2026-10-02T11:05:00",
       },
-      { id: "m-8", role: "assistant", created_at: "2026-10-02T11:05:00", feedback: "up", ...ANSWERS.leave },
+      {
+        id: "m-8",
+        role: "assistant",
+        created_at: "2026-10-02T11:05:00",
+        feedback: "up",
+        ...ANSWERS.leave,
+      },
     ],
   },
   {
@@ -325,7 +384,13 @@ const SEED_CONVERSATIONS = [
         content: "Who gets paged when we declare a severity 1?",
         created_at: "2026-09-29T08:23:00",
       },
-      { id: "m-10", role: "assistant", created_at: "2026-09-29T08:23:00", feedback: null, ...ANSWERS.incident },
+      {
+        id: "m-10",
+        role: "assistant",
+        created_at: "2026-09-29T08:23:00",
+        feedback: null,
+        ...ANSWERS.incident,
+      },
     ],
   },
   {
@@ -339,7 +404,13 @@ const SEED_CONVERSATIONS = [
         content: "How does a new starter get VPN access, and how is split tunnelling configured?",
         created_at: "2026-09-25T14:02:00",
       },
-      { id: "m-12", role: "assistant", created_at: "2026-09-25T14:02:00", feedback: null, ...ANSWERS.vpn },
+      {
+        id: "m-12",
+        role: "assistant",
+        created_at: "2026-09-25T14:02:00",
+        feedback: null,
+        ...ANSWERS.vpn,
+      },
     ],
   },
   {
@@ -353,7 +424,13 @@ const SEED_CONVERSATIONS = [
         content: "What is our 2027 revenue target?",
         created_at: "2026-09-22T17:30:00",
       },
-      { id: "m-14", role: "assistant", created_at: "2026-09-22T17:30:00", feedback: null, ...NOT_COVERED },
+      {
+        id: "m-14",
+        role: "assistant",
+        created_at: "2026-09-22T17:30:00",
+        feedback: null,
+        ...NOT_COVERED,
+      },
     ],
   },
 ];
@@ -378,7 +455,10 @@ function buildAnswer(question) {
 }
 
 function titleFrom(question) {
-  const clean = question.replace(/\s+/g, " ").trim().replace(/[?.!]+$/, "");
+  const clean = question
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[?.!]+$/, "");
   return clean.length > 52 ? clean.slice(0, 52).trim() + "…" : clean;
 }
 
@@ -391,7 +471,9 @@ function fmtDay(iso) {
   const d = new Date(iso);
   const now = new Date();
   const same = (a, b) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
   const yest = new Date(now.getTime() - 86400000);
   if (same(d, now)) return "Today";
   if (same(d, yest)) return "Yesterday";
@@ -437,7 +519,7 @@ export default function Screen() {
     const delay = stream.shown === 0 ? 420 : 26;
     const t = setTimeout(() => {
       setStream((s) =>
-        s && s.id === stream.id ? { ...s, shown: Math.min(s.shown + 2, s.tokens.length) } : s
+        s && s.id === stream.id ? { ...s, shown: Math.min(s.shown + 2, s.tokens.length) } : s,
       );
     }, delay);
     return () => clearTimeout(t);
@@ -489,7 +571,7 @@ export default function Screen() {
       feedback: null,
     };
     setConversations((prev) =>
-      prev.map((c) => (c.id === s.convId ? { ...c, messages: [...c.messages, msg] } : c))
+      prev.map((c) => (c.id === s.convId ? { ...c, messages: [...c.messages, msg] } : c)),
     );
     setStream(null);
     if (stopped) {
@@ -515,7 +597,7 @@ export default function Screen() {
       setActiveId(convId);
     } else {
       setConversations((prev) =>
-        prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, userMsg] } : c))
+        prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, userMsg] } : c)),
       );
     }
     const answer = buildAnswer(q);
@@ -554,7 +636,7 @@ export default function Screen() {
   }
 
   const filteredHistory = conversations.filter((c) =>
-    c.title.toLowerCase().includes(historyQuery.trim().toLowerCase())
+    c.title.toLowerCase().includes(historyQuery.trim().toLowerCase()),
   );
 
   const streamText = stream ? stream.tokens.slice(0, stream.shown).join("") : "";
@@ -621,10 +703,10 @@ export default function Screen() {
             : {
                 ...c,
                 messages: c.messages.map((m) =>
-                  m.id === msg.id ? { ...m, feedback: m.feedback === rating ? null : rating } : m
+                  m.id === msg.id ? { ...m, feedback: m.feedback === rating ? null : rating } : m,
                 ),
-              }
-        )
+              },
+        ),
       );
     };
     return (
@@ -677,8 +759,8 @@ export default function Screen() {
             Chat
           </h1>
           <p className="mt-2 text-sm leading-6" style={{ color: brand.neutralColor }}>
-            Answers are built only from documents in the shared knowledge base. Every claim carries a
-            citation you can open beside the answer — and when nothing supports your question, the
+            Answers are built only from documents in the shared knowledge base. Every claim carries
+            a citation you can open beside the answer — and when nothing supports your question, the
             assistant says so instead of guessing.
           </p>
         </div>
@@ -732,7 +814,11 @@ export default function Screen() {
               {conversations.length} saved · visible only to you
             </p>
             <div className="mt-3">
-              <label htmlFor="history-search" className="block text-xs font-medium" style={{ color: BODY_INK }}>
+              <label
+                htmlFor="history-search"
+                className="block text-xs font-medium"
+                style={{ color: BODY_INK }}
+              >
                 Search your history
               </label>
               <div className="relative mt-1">
@@ -747,7 +833,9 @@ export default function Screen() {
                   value={historyQuery}
                   onChange={(e) => setHistoryQuery(e.target.value)}
                   placeholder="e.g. expenses"
-                  className={"w-full rounded-[0.5rem] border bg-white py-2 pl-8 pr-3 text-sm " + RING}
+                  className={
+                    "w-full rounded-[0.5rem] border bg-white py-2 pl-8 pr-3 text-sm " + RING
+                  }
                   style={{ borderColor: BORDER, color: BODY_INK }}
                 />
               </div>
@@ -791,7 +879,8 @@ export default function Screen() {
                       }}
                       aria-current={isActive ? "true" : undefined}
                       className={
-                        "flex-1 rounded-[0.5rem] border-l-2 px-3 py-2 text-left hover:bg-[#F1F3F1] " + RING
+                        "flex-1 rounded-[0.5rem] border-l-2 px-3 py-2 text-left hover:bg-[#F1F3F1] " +
+                        RING
                       }
                       style={{
                         borderLeftColor: isActive ? brand.primaryColor : "transparent",
@@ -799,7 +888,9 @@ export default function Screen() {
                       }}
                     >
                       <span
-                        className={"block text-sm leading-5 " + (isActive ? "font-semibold" : "font-normal")}
+                        className={
+                          "block text-sm leading-5 " + (isActive ? "font-semibold" : "font-normal")
+                        }
                         style={{ color: INK }}
                       >
                         {c.title}
@@ -832,7 +923,11 @@ export default function Screen() {
           style={{ borderColor: BORDER }}
         >
           <div className="border-b px-6 py-4" style={{ borderColor: BORDER }}>
-            <h2 id="conversation-heading" className="text-base font-semibold" style={{ color: INK }}>
+            <h2
+              id="conversation-heading"
+              className="text-base font-semibold"
+              style={{ color: INK }}
+            >
               {activeConv ? activeConv.title : "New conversation"}
             </h2>
             <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
@@ -861,17 +956,24 @@ export default function Screen() {
                   className="mx-auto flex h-11 w-11 items-center justify-center rounded-full"
                   style={{ backgroundColor: "#E4EDE9" }}
                 >
-                  <Icons.Search className="h-5 w-5" aria-hidden="true" style={{ color: brand.primaryColor }} />
+                  <Icons.Search
+                    className="h-5 w-5"
+                    aria-hidden="true"
+                    style={{ color: brand.primaryColor }}
+                  />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold" style={{ color: INK }}>
                   {conversations.length === 0
                     ? "Welcome — ask our knowledge base anything"
                     : "Ask a question to start"}
                 </h3>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6" style={{ color: brand.neutralColor }}>
-                  Answers come only from documents uploaded to the shared company knowledge base, and each
-                  one is cited so you can read the original passage. If nothing covers your question, you
-                  will be told rather than guessed at.
+                <p
+                  className="mx-auto mt-2 max-w-md text-sm leading-6"
+                  style={{ color: brand.neutralColor }}
+                >
+                  Answers come only from documents uploaded to the shared company knowledge base,
+                  and each one is cited so you can read the original passage. If nothing covers your
+                  question, you will be told rather than guessed at.
                 </p>
                 <p className="mt-3 text-sm">
                   <button
@@ -883,7 +985,10 @@ export default function Screen() {
                     Read the getting-started guide
                   </button>
                 </p>
-                <h4 className="mt-8 text-xs font-semibold uppercase tracking-wide" style={{ color: INK }}>
+                <h4
+                  className="mt-8 text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: INK }}
+                >
                   Try one of these
                 </h4>
                 <ul role="list" className="mx-auto mt-3 grid gap-2 text-left sm:grid-cols-2">
@@ -928,7 +1033,10 @@ export default function Screen() {
                   ) : (
                     <li key={msg.id}>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-semibold" style={{ color: brand.primaryColor }}>
+                        <span
+                          className="text-xs font-semibold"
+                          style={{ color: brand.primaryColor }}
+                        >
                           Assistant
                         </span>
                         <span className="text-xs" style={{ color: brand.neutralColor }}>
@@ -1002,17 +1110,27 @@ export default function Screen() {
                                     >
                                       <span
                                         className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[0.68rem] font-semibold"
-                                        style={{ backgroundColor: "#E4EDE9", color: brand.primaryColor }}
+                                        style={{
+                                          backgroundColor: "#E4EDE9",
+                                          color: brand.primaryColor,
+                                        }}
                                         aria-hidden="true"
                                       >
                                         {i + 1}
                                       </span>
                                       <span className="min-w-0 flex-1">
-                                        <span className="block truncate font-medium" style={{ color: INK }}>
+                                        <span
+                                          className="block truncate font-medium"
+                                          style={{ color: INK }}
+                                        >
                                           {doc.filename}
                                         </span>
-                                        <span className="block text-xs" style={{ color: brand.neutralColor }}>
-                                          {doc.source_type} · {doc.format} · passage {cit.chunk_index}
+                                        <span
+                                          className="block text-xs"
+                                          style={{ color: brand.neutralColor }}
+                                        >
+                                          {doc.source_type} · {doc.format} · passage{" "}
+                                          {cit.chunk_index}
                                         </span>
                                       </span>
                                       <Icons.ChevronRight
@@ -1029,9 +1147,12 @@ export default function Screen() {
                         )}
 
                         {msg.not_covered && (
-                          <p className="mt-3 text-xs leading-5" style={{ color: brand.neutralColor }}>
-                            No citations are shown because no passage scored above the relevance threshold.
-                            You can{" "}
+                          <p
+                            className="mt-3 text-xs leading-5"
+                            style={{ color: brand.neutralColor }}
+                          >
+                            No citations are shown because no passage scored above the relevance
+                            threshold. You can{" "}
                             <button
                               type="button"
                               onClick={() => navigate("documents")}
@@ -1048,7 +1169,7 @@ export default function Screen() {
                         {!msg.stopped && <Feedback convId={activeConv.id} msg={msg} />}
                       </div>
                     </li>
-                  )
+                  ),
                 )}
 
                 {stream && stream.convId === activeConv.id && (
@@ -1067,7 +1188,8 @@ export default function Screen() {
                     >
                       {stream.shown === 0 ? (
                         <p className="text-sm" style={{ color: brand.neutralColor }}>
-                          Running hybrid keyword and meaning-based retrieval across the combined index…
+                          Running hybrid keyword and meaning-based retrieval across the combined
+                          index…
                         </p>
                       ) : (
                         renderBody(streamText, stream.answer.citations, stream.id)
@@ -1092,7 +1214,11 @@ export default function Screen() {
                 ask(draft);
               }}
             >
-              <label htmlFor="question" className="block text-sm font-medium" style={{ color: INK }}>
+              <label
+                htmlFor="question"
+                className="block text-sm font-medium"
+                style={{ color: INK }}
+              >
                 Ask a question
               </label>
               <textarea
@@ -1117,9 +1243,13 @@ export default function Screen() {
                 style={{ borderColor: BORDER, color: BODY_INK }}
               />
               <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <p id="question-hint" className="max-w-md text-xs leading-5" style={{ color: brand.neutralColor }}>
-                  Enter sends · Shift + Enter adds a line. The whole knowledge base is searched — there are
-                  no filters to set.
+                <p
+                  id="question-hint"
+                  className="max-w-md text-xs leading-5"
+                  style={{ color: brand.neutralColor }}
+                >
+                  Enter sends · Shift + Enter adds a line. The whole knowledge base is searched —
+                  there are no filters to set.
                 </p>
                 <div className="flex items-center gap-2">
                   {isStreaming && (
@@ -1201,8 +1331,8 @@ export default function Screen() {
                 No source open
               </p>
               <p className="mt-1 text-xs leading-5" style={{ color: brand.neutralColor }}>
-                Select a citation number in an answer and the exact passage it came from opens here, beside
-                the answer.
+                Select a citation number in an answer and the exact passage it came from opens here,
+                beside the answer.
               </p>
             </div>
           ) : (
@@ -1267,7 +1397,10 @@ export default function Screen() {
                 </div>
               </dl>
 
-              <h4 className="mt-5 text-xs font-semibold uppercase tracking-wide" style={{ color: INK }}>
+              <h4
+                className="mt-5 text-xs font-semibold uppercase tracking-wide"
+                style={{ color: INK }}
+              >
                 Cited passage
               </h4>
               <blockquote
@@ -1317,8 +1450,8 @@ export default function Screen() {
               Delete this conversation?
             </h2>
             <p id="delete-desc" className="mt-2 text-sm leading-6" style={{ color: BODY_INK }}>
-              “{deleteTarget.title}” will be removed from your history and will no longer appear in your
-              list. The documents it cited are not affected.
+              “{deleteTarget.title}” will be removed from your history and will no longer appear in
+              your list. The documents it cited are not affected.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button
