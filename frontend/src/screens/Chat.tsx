@@ -163,7 +163,8 @@ export default function Screen() {
             (activeMessages[0] && activeMessages[0].role === "user"
               ? titleFrom(activeMessages[0].content)
               : "New conversation"),
-          created_at: activeMeta?.created_at ?? activeMessages[0]?.created_at ?? new Date().toISOString(),
+          created_at:
+            activeMeta?.created_at ?? activeMessages[0]?.created_at ?? new Date().toISOString(),
           messages: activeMessages,
         }
       : null;
@@ -574,10 +575,16 @@ export default function Screen() {
               Your conversations
             </h2>
             <p className="mt-1 text-xs" style={{ color: brand.neutralColor }}>
-              {historyStatus === "loaded" ? historyList.length + " saved · visible only to you" : ""}
+              {historyStatus === "loaded"
+                ? historyList.length + " saved · visible only to you"
+                : ""}
             </p>
             {deleteError && (
-              <p role="alert" className="mt-2 text-xs font-medium" style={{ color: brand.accentColor }}>
+              <p
+                role="alert"
+                className="mt-2 text-xs font-medium"
+                style={{ color: brand.accentColor }}
+              >
                 {deleteError}
               </p>
             )}

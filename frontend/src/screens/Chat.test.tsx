@@ -356,7 +356,8 @@ describe("Chat screen", () => {
         const path = pathOf(url);
         const method = (init?.method ?? "GET").toUpperCase();
         if (path === "/me") return Promise.resolve(meResponse());
-        if (path === "/conversations" && method === "GET") return Promise.resolve(jsonResponse(500, {}));
+        if (path === "/conversations" && method === "GET")
+          return Promise.resolve(jsonResponse(500, {}));
         return Promise.resolve(jsonResponse(200, {}));
       }),
     );
@@ -380,9 +381,7 @@ describe("Chat screen", () => {
     expect(screen.getByText("Expenses are reimbursed within 30 days.")).toBeInTheDocument();
 
     await user.click(screen.getByText("policy.pdf"));
-    expect(
-      screen.getByRole("link", { name: /Open original source/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open original source/i })).toBeInTheDocument();
   });
 
   it("asking inside a reopened conversation posts the real conversation_id, not null (AC-115)", async () => {
