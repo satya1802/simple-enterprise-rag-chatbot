@@ -141,7 +141,9 @@ def _extract_text(fmt: str, content: bytes) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _chunk_text(text: str, chunk_size: int = _CHUNK_SIZE, overlap: int = _CHUNK_OVERLAP) -> list[str]:
+def _chunk_text(
+    text: str, chunk_size: int = _CHUNK_SIZE, overlap: int = _CHUNK_OVERLAP
+) -> list[str]:
     """Split normalised text into overlapping chunks, in document order."""
     normalized = re.sub(r"\s+", " ", text).strip()
     if not normalized:
@@ -213,9 +215,7 @@ def process_document(document_id: str) -> None:
         try:
             content = _read_stored_file(document.s3_key)
         except Exception:
-            logger.exception(
-                "ingest: failed to read stored file for document %s", document_id
-            )
+            logger.exception("ingest: failed to read stored file for document %s", document_id)
             _set_status(
                 db, document, "Failed", "The uploaded file could not be retrieved from storage."
             )
@@ -244,9 +244,7 @@ def process_document(document_id: str) -> None:
 
         chunk_texts = _chunk_text(text)
         if not chunk_texts:
-            logger.info(
-                "ingest: document %s yielded no meaningful text", document_id
-            )
+            logger.info("ingest: document %s yielded no meaningful text", document_id)
             _replace_chunks(db, document.id, [])
             _set_status(db, document, "No readable text", _NO_READABLE_TEXT_REASON)
             return
@@ -256,9 +254,7 @@ def process_document(document_id: str) -> None:
             embeddings = provider.embed(chunk_texts)
         except Exception:
             logger.exception("ingest: embedding failed for document %s", document_id)
-            _set_status(
-                db, document, "Failed", "Generating embeddings for this file failed."
-            )
+            _set_status(db, document, "Failed", "Generating embeddings for this file failed.")
             return
 
         chunk_rows = [
@@ -275,7 +271,9 @@ def process_document(document_id: str) -> None:
                     "source_url": document.source_url,
                 },
             )
-            for index, (chunk_text, vector) in enumerate(zip(chunk_texts, embeddings))
+            for index, (chunk_text, vector) in enumerate(
+                zip(chunk_texts, embeddings, strict=True)
+            )
         ]
         _replace_chunks(db, document.id, chunk_rows)
         _set_status(db, document, "Ready", None)
