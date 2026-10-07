@@ -29,6 +29,15 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 SQS_INGEST_QUEUE_URL = os.getenv("SQS_INGEST_QUEUE_URL", "")
 
 # model_provider: Amazon Bedrock (chat + embedding), behind a provider
-# adapter so the model is swappable by config alone.
+# adapter so the model is swappable by config alone. MODEL_PROVIDER selects
+# the adapter (see app.services.providers); adding another in-tenant
+# provider is one new adapter plus a value here, no API or schema change.
+MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "bedrock")
 BEDROCK_CHAT_MODEL_ID = os.getenv("BEDROCK_CHAT_MODEL_ID", "")
 BEDROCK_EMBEDDING_MODEL_ID = os.getenv("BEDROCK_EMBEDDING_MODEL_ID", "")
+# Optional private VPC endpoint URL for Bedrock; empty means use the regional
+# public-AWS (but in-VPC-routed) bedrock-runtime endpoint for AWS_REGION.
+BEDROCK_ENDPOINT_URL = os.getenv("BEDROCK_ENDPOINT_URL", "")
+# Comma-separated extra hostnames the adapter may initialise against, for a
+# private endpoint whose hostname does not match the standard AWS shapes.
+MODEL_PROVIDER_ALLOWED_HOSTS = os.getenv("MODEL_PROVIDER_ALLOWED_HOSTS", "")
